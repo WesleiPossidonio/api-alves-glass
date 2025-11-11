@@ -1,0 +1,26 @@
+# pastas
+node_modules
+dist
+build
+tmp
+logs
+# env
+.env
+
+# controle de versão
+.git
+.gitignore
+
+# dependências do editor
+.vscode
+.idea
+
+# dumps e dados
+*.sql
+*.sqlite
+uploads
+storage
+
+# docker interno
+Dockerfile
+docker-compose.yml
