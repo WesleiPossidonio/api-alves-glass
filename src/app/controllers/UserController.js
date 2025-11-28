@@ -2,7 +2,7 @@ import { v4 } from 'uuid'
 import validator from 'validator'
 
 import * as Yup from 'yup'
-import User from '../models/User'
+import User from '../models/User.js'
 
 // Função de sanitização reutilizável
 const sanitizeInput = (data) => {
