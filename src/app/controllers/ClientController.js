@@ -3,14 +3,25 @@ import validator from 'validator'
 import * as Yup from 'yup'
 import Client from '../models/Client.js'
 
-// Função de sanitização reutilizável
+// Sanitização sem quebrar CPF/CNPJ/CEP
 const sanitizeInput = (data) => {
-  const sanitizedData = {}
-  Object.keys(data).forEach((key) => {
-    sanitizedData[key] =
-      typeof data[key] === 'string' ? validator.escape(data[key]) : data[key]
-  })
-  return sanitizedData
+  const sanitized = {}
+
+  for (const key of Object.keys(data)) {
+    const value = data[key]
+
+    if (typeof value === "string") {
+      if (["cpf_cnpj", "cep"].includes(key)) {
+        sanitized[key] = value.trim()
+      } else {
+        sanitized[key] = validator.escape(value.trim())
+      }
+    } else {
+      sanitized[key] = value
+    }
+  }
+
+  return sanitized
 }
 
 class UserController {
@@ -25,13 +36,13 @@ class UserController {
       bairro: Yup.string().required(),
       cidade: Yup.string().required(),
       uf: Yup.string().required(),
-      password: Yup.string().min(6).optional(),
+      password: Yup.string().min(6).required(),
     })
 
     const sanitizedBody = sanitizeInput(request.body)
 
     try {
-      await schema.validateSync(sanitizedBody, { abortEarly: false })
+      await schema.validate(sanitizedBody, { abortEarly: false })
     } catch (err) {
       return response.status(400).json({ error: err.errors })
     }
@@ -46,36 +57,31 @@ class UserController {
       cidade,
       uf,
       password,
-    } =
-      sanitizedBody
+    } = sanitizedBody
 
-    const emailNormalized = sanitizedBody.email.trim().toLowerCase()
+    const email = sanitizedBody.email.toLowerCase()
 
-    const emailClientExists = await Client.findOne({
-      where: { email: emailNormalized },
-    })
-
-    const nameClientExists = await Client.findOne({
-      where: { name },
-    })
-
+    // Verifica duplicidade
+    const emailClientExists = await Client.findOne({ where: { email } })
     if (emailClientExists) {
-      return response.status(409).json({ error: 'Email user already exists' })
+      return response.status(409).json({ error: 'Email already exists' })
     }
 
+    const nameClientExists = await Client.findOne({ where: { name } })
     if (nameClientExists) {
-      return response.status(409).json({ error: 'Name user already exists' })
+      return response.status(409).json({ error: 'Name already exists' })
     }
 
+    // números aleatórios
     const number_client = Math.floor(100000 + Math.random() * 900000).toString()
     const update_number = Math.floor(100000 + Math.random() * 900000).toString()
 
     await Client.create({
       id: v4(),
       name,
-      email: emailNormalized,
-      number_client: number_client,
-      update_number: update_number,
+      email,
+      number_client,
+      update_number,
       cpf_cnpj,
       cep,
       rua,
@@ -86,20 +92,18 @@ class UserController {
       password
     })
 
-
-
     return response.status(201).json({ message: 'User created successfully' })
   }
 
   async index (request, response) {
-    const listClient = await Client.findAll()
-    return response.json(listClient)
+    const clients = await Client.findAll()
+    return response.json(clients)
   }
 
   async update (request, response) {
     const schema = Yup.object().shape({
       update_number: Yup.string().optional(),
-      password: Yup.string().optional().min(6),
+      password: Yup.string().min(6).optional(),
       name: Yup.string().optional(),
       email: Yup.string().email().optional(),
       cpf_cnpj: Yup.string().optional(),
@@ -114,48 +118,53 @@ class UserController {
     const sanitizedBody = sanitizeInput(request.body)
 
     try {
-      await schema.validateSync(sanitizedBody, { abortEarly: false })
+      await schema.validate(sanitizedBody, { abortEarly: false })
     } catch (err) {
       return response.status(400).json({ error: err.errors })
     }
 
-    const { password, update_number, name, email } = sanitizedBody
-    const { id } = request.params // Assumindo que `id` seja passado na URL (ex: /users/:id)
+    const { id } = request.params
+    const { update_number, password, email, name } = sanitizedBody
 
+    // 🔥 Atualização de senha via update_number
     if (update_number && !id) {
-      const verificationNumber = await Client.findOne({
-        where: { update_number },
-      })
+      const client = await Client.findOne({ where: { update_number } })
 
-      if (!verificationNumber) {
+      if (!client) {
         return response.status(400).json({ error: 'Invalid update number' })
       }
 
-      const client = await Client.findOne({
-        where: { update_number }
-      })
-
       if (password) client.password = password
-      await client.save();
 
-      return response
-        .status(200)
-        .json({ message: 'Password updated successfully' })
+      await client.save()
+      return response.status(200).json({ message: 'Password updated successfully' })
     }
 
-    const verificationClient = await Client.findOne({
-      where: { id },
-    })
+    // 🔥 Atualização de perfil normal
+    const client = await Client.findByPk(id)
 
-    if (!verificationClient) {
+    if (!client) {
       return response.status(404).json({ error: 'User not found' })
     }
 
-    if (name) verificationClient.name = name
-    if (email) verificationClient.email = email
-    if (password) verificationClient.password = password
+    // previne email duplicado
+    if (email) {
+      const emailExists = await Client.findOne({
+        where: { email, id: { $ne: id } },
+      })
 
-    await verificationClient.save();
+      if (emailExists) {
+        return response.status(409).json({ error: 'Email already exists' })
+      }
+
+      client.email = email.toLowerCase()
+    }
+
+    if (name) client.name = name
+    if (password) client.password = password
+
+    await client.save()
+
     return response.status(200).json({ message: 'User updated successfully' })
   }
 }

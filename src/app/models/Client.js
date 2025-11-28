@@ -46,11 +46,10 @@ class Client extends Model {
 
   static associate (models) {
 
-    // Um modelo tem muitos serviços
     this.hasMany(models.Order, {
       foreignKey: 'client_id',
-      as: 'services',
-    });
+      as: 'orders',
+    })
   }
 }
 

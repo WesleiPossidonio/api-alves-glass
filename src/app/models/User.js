@@ -1,7 +1,6 @@
 import Sequelize, { Model } from 'sequelize'
-import bcrypt from 'bcrypt'
 
-class User extends Model {
+class ServicesProducts extends Model {
   static init (sequelize) {
     super.init(
       {
@@ -10,32 +9,26 @@ class User extends Model {
           defaultValue: Sequelize.UUIDV4,
           primaryKey: true,
         },
-        name: Sequelize.STRING,
-        email: Sequelize.STRING,
-        password: Sequelize.VIRTUAL,
-        password_hash: Sequelize.STRING,
-        admin: Sequelize.BOOLEAN,
-        update_number: Sequelize.STRING,
+        order_id: Sequelize.UUID,
+        product_name: Sequelize.STRING,
+        quantity: Sequelize.STRING,
+        price: Sequelize.STRING,
       },
       {
         sequelize,
-        tableName: 'users',
-        freezeTableName: true
-      }
+        tableName: 'services_products',
+      },
     )
-
-    this.addHook('beforeSave', async (user) => {
-      if (user.password) {
-        user.password_hash = await bcrypt.hash(user.password, 10)
-      }
-    })
 
     return this
   }
 
-  checkPassword (password) {
-    return bcrypt.compare(password, this.password_hash)
+  static associate (models) {
+    this.belongsTo(models.Order, {
+      foreignKey: 'order_id',
+      as: 'order',  // 🔥 Correto
+    })
   }
 }
 
-export default User
+export default ServicesProducts

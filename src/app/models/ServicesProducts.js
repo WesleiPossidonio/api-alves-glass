@@ -9,14 +9,18 @@ class ServicesProducts extends Model {
           defaultValue: Sequelize.UUIDV4,
           primaryKey: true,
         },
-        service_id: Sequelize.STRING,
+        service_id: {
+          type: Sequelize.UUID,
+          allowNull: true,
+        },
         product_name: Sequelize.STRING,
         quantity: Sequelize.STRING,
         price: Sequelize.STRING,
       },
       {
         sequelize,
-      },
+        tableName: 'services_products',
+      }
     )
 
     return this
@@ -25,7 +29,7 @@ class ServicesProducts extends Model {
   static associate (models) {
     this.belongsTo(models.Order, {
       foreignKey: 'service_id',
-      as: 'products',
+      as: 'order',
     })
   }
 }

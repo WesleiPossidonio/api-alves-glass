@@ -1,111 +1,47 @@
-import * as Yup from 'yup';
-import Order from '../models/Order.js';
-import ServiceProducts from '../models/ServicesProducts.js';
+import * as Yup from "yup";
+import Order from "../models/Order.js";
+import ServiceProducts from "../models/ServicesProducts.js";
+import validator from "validator";
+
+const sanitize = (data) => {
+  const sanitized = {};
+
+  for (const key in data) {
+    const value = data[key];
+    sanitized[key] =
+      typeof value === "string" ? validator.escape(value.trim()) : value;
+  }
+  return sanitized;
+};
 
 class OrderController {
   async store (request, response) {
-    try {
-      const schema = Yup.object().shape({
-        client_id: Yup.string().uuid().required(),
-        order_number: Yup.string().required(),
-        status_description: Yup.string().required(),
-        status: Yup.string().required(),
-        total: Yup.number().required(),
-        products: Yup.array()
-          .of(
-            Yup.object().shape({
-              product_name: Yup.string().required(),
-              quantity: Yup.number().required(),
-              price: Yup.number().required()
-            })
-          )
-          .required()
-      });
+    const body = sanitize(request.body);
 
-      await schema.validate(request.body, { abortEarly: false });
-
-      const {
-        client_id,
-        order_number,
-        status_description,
-        status,
-        total,
-        products
-      } = request.body;
-
-      // 1️⃣ Cria o pedido principal
-      const service = await Order.create({
-        client_id,
-        order_number,
-        status_description,
-        status,
-        total
-      });
-
-      // 2️⃣ Associa produtos ao pedido
-      const productsToInsert = products.map((p) => ({
-        service_id: service.id,
-        product_name: p.product_name,
-        quantity: p.quantity,
-        price: p.price,
-        subtotal: p.quantity * p.price
-      }));
-
-      // 🔹 Insere ignorando timestamps se não existirem
-      await ServiceProducts.bulkCreate(productsToInsert, {
-        validate: true,
-        ignoreDuplicates: false
-      });
-
-      return response.status(201).json({
-        message: 'Pedido criado com sucesso!',
-        order: {
-          ...service.toJSON(),
-          products: productsToInsert
-        }
-      });
-    } catch (error) {
-      console.error('Erro no método store:', error);
-      return response.status(500).json({
-        error:
-          error.name === 'SequelizeDatabaseError'
-            ? 'Erro no banco de dados: verifique as colunas da tabela.'
-            : 'Erro interno do servidor'
-      });
-    }
-  }
-
-
-  async index (request, response) {
-    const list = await Order.findAll({
-      include: [{ model: ServiceProducts, as: 'products' }],
-      order: [['created_at', 'DESC']]
-    });
-    return response.json(list);
-  }
-
-  async update (request, response) {
-    try {
-      const { id } = request.params;
-
-      // ✅ Schema com campos opcionais
-      const schema = Yup.object().shape({
-        client_id: Yup.string().uuid(),
-        order_number: Yup.string(),
-        status_description: Yup.string(),
-        status: Yup.string(),
-        total: Yup.number(),
-        products: Yup.array().of(
+    const schema = Yup.object().shape({
+      client_id: Yup.string().uuid().required(),
+      order_number: Yup.string().required(),
+      status_description: Yup.string().required(),
+      status: Yup.string().required(),
+      total: Yup.number().positive().required(),
+      products: Yup.array()
+        .of(
           Yup.object().shape({
             product_name: Yup.string().required(),
-            quantity: Yup.number().required(),
-            price: Yup.number().required(),
+            quantity: Yup.number().positive().required(),
+            price: Yup.number().positive().required(),
           })
-        ),
-      });
+        )
+        .required(),
+    });
 
-      await schema.validate(request.body, { abortEarly: false });
+    try {
+      await schema.validate(body, { abortEarly: false });
+    } catch (err) {
+      return response.status(400).json({ errors: err.errors });
+    }
 
+    try {
       const {
         client_id,
         order_number,
@@ -113,16 +49,95 @@ class OrderController {
         status,
         total,
         products,
-      } = request.body;
+      } = body;
 
-      // 🔍 Verifica se o pedido existe
+      // 1️⃣ Cria pedido
+      const service = await Order.create({
+        client_id,
+        order_number,
+        status_description,
+        status,
+        total,
+      });
+
+      // 2️⃣ Produtos associados
+      const productsToInsert = products.map((p) => ({
+        service_id: service.id,
+        product_name: p.product_name,
+        quantity: p.quantity,
+        price: p.price,
+        subtotal: p.quantity * p.price,
+      }));
+
+      await ServiceProducts.bulkCreate(productsToInsert, {
+        validate: true,
+      });
+
+      return response.status(201).json({
+        message: "Pedido criado com sucesso!",
+        order: {
+          ...service.toJSON(),
+          products: productsToInsert,
+        },
+      });
+    } catch (error) {
+      console.error("Erro interno no store:", error);
+      return response.status(500).json({
+        error: "Erro interno do servidor",
+      });
+    }
+  }
+
+  async index (request, response) {
+    try {
+      const list = await Order.findAll({
+        include: [{ model: ServiceProducts, as: "products" }],
+        order: [["createdAt", "DESC"]],
+      });
+
+      return response.json(list);
+    } catch (error) {
+      console.error("Erro no index:", error);
+      return response.status(500).json({ error: "Erro interno do servidor" });
+    }
+  }
+
+  async update (request, response) {
+    const body = sanitize(request.body);
+
+    const schema = Yup.object().shape({
+      client_id: Yup.string().uuid(),
+      order_number: Yup.string(),
+      status_description: Yup.string(),
+      status: Yup.string(),
+      total: Yup.number().positive(),
+      products: Yup.array().of(
+        Yup.object().shape({
+          product_name: Yup.string().required(),
+          quantity: Yup.number().positive().required(),
+          price: Yup.number().positive().required(),
+        })
+      ),
+    });
+
+    try {
+      await schema.validate(body, { abortEarly: false });
+    } catch (err) {
+      return response.status(400).json({ errors: err.errors });
+    }
+
+    try {
+      const { id } = request.params;
+
       const order = await Order.findByPk(id);
 
       if (!order) {
         return response.status(404).json({ error: "Pedido não encontrado" });
       }
 
-      // 🧾 Atualiza apenas os campos enviados
+      const { client_id, order_number, status_description, status, total, products } = body;
+
+      // Atualiza apenas campos enviados
       await order.update({
         ...(client_id && { client_id }),
         ...(order_number && { order_number }),
@@ -131,14 +146,10 @@ class OrderController {
         ...(typeof total === "number" && { total }),
       });
 
-      // 🛒 Atualiza produtos, se enviados
-      if (products && Array.isArray(products)) {
-        // Remove antigos
-        await ServiceProducts.destroy({
-          where: { service_id: id },
-        });
+      // Atualiza produtos
+      if (products) {
+        await ServiceProducts.destroy({ where: { service_id: id } });
 
-        // Adiciona novos
         const productsToInsert = products.map((p) => ({
           service_id: id,
           product_name: p.product_name,
@@ -150,7 +161,6 @@ class OrderController {
         await ServiceProducts.bulkCreate(productsToInsert);
       }
 
-      // 🔁 Retorna o pedido atualizado com produtos
       const updatedOrder = await Order.findByPk(id, {
         include: [{ model: ServiceProducts, as: "products" }],
       });
@@ -160,13 +170,8 @@ class OrderController {
         order: updatedOrder,
       });
     } catch (error) {
-      console.error("Erro no método update:", error);
-      return response.status(500).json({
-        error:
-          error.name === "SequelizeDatabaseError"
-            ? "Erro no banco de dados: verifique as colunas da tabela."
-            : "Erro interno do servidor",
-      });
+      console.error("Erro no update:", error);
+      return response.status(500).json({ error: "Erro interno do servidor" });
     }
   }
 }

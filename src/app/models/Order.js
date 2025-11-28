@@ -10,7 +10,10 @@ class Order extends Model {
           primaryKey: true,
         },
         order_number: Sequelize.STRING,
-        client_id: Sequelize.UUID,
+        client_id: {
+          type: Sequelize.UUID,
+          allowNull: true,
+        },
         status_description: Sequelize.STRING,
         status: Sequelize.STRING,
         total: Sequelize.INTEGER,
@@ -27,11 +30,11 @@ class Order extends Model {
     this.hasMany(models.ServicesProducts, {
       foreignKey: 'service_id',
       as: 'products',
-    });
+    })
 
     this.belongsTo(models.Client, {
       foreignKey: 'client_id',
-      as: 'services',
+      as: 'client', // CORRETO
     })
   }
 }
