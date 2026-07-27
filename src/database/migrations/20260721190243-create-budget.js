@@ -1,9 +1,9 @@
 'use strict';
 
 /** @type {import('sequelize-cli').Migration} */
-module.exports = {
+export default {
   async up (queryInterface, Sequelize) {
-    await queryInterface.createTable('order', {
+     queryInterface.createTable('budget', {
       id: {
         type: Sequelize.UUID,
         defaultValue: Sequelize.UUIDV4,
@@ -20,21 +20,25 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'SET NULL'
       },
-      order_number: {
+      name_budget: {
         type: Sequelize.STRING,
         allowNull: false
       },
-      status_description: {
+      description_budget: {
         type: Sequelize.STRING,
         allowNull: false
       },
-      status: {
-        type: Sequelize.STRING,
+      expiration_date: {
+        type: Sequelize.DATE,
         allowNull: false
       },
-      total: {
-        type: Sequelize.INTEGER,
+      total_value: {
+        type: Sequelize.DECIMAL(10,2),
         allowNull: false
+       },
+      pdf_object_name: {
+         type: Sequelize.STRING,
+         allowNull: true,
       },
       created_at: {
         type: Sequelize.DATE,
@@ -44,11 +48,10 @@ module.exports = {
         type: Sequelize.DATE,
         allowNull: false,
       },
-    });
-
+     })
   },
 
   async down (queryInterface, Sequelize) {
-    await queryInterface.dropTable('order');
+    await queryInterface.dropTable('budget');
   }
 };

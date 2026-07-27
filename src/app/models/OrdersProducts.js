@@ -1,6 +1,6 @@
 import Sequelize, { Model } from 'sequelize'
 
-class ServicesProducts extends Model {
+class OrdersProducts extends Model {
   static init (sequelize) {
     super.init(
       {
@@ -9,17 +9,17 @@ class ServicesProducts extends Model {
           defaultValue: Sequelize.UUIDV4,
           primaryKey: true,
         },
-        service_id: {
+        order_id: {
           type: Sequelize.UUID,
           allowNull: true,
         },
         product_name: Sequelize.STRING,
-        quantity: Sequelize.STRING,
-        price: Sequelize.STRING,
+        quantity: Sequelize.DECIMAL(10,2),
+        unit_price: Sequelize.DECIMAL(10,2),
       },
       {
         sequelize,
-        tableName: 'services_products',
+        tableName: 'orders_products',
       }
     )
 
@@ -28,10 +28,10 @@ class ServicesProducts extends Model {
 
   static associate (models) {
     this.belongsTo(models.Order, {
-      foreignKey: 'service_id',
+      foreignKey: 'order_id',
       as: 'order',
     })
   }
 }
 
-export default ServicesProducts
+export default OrdersProducts

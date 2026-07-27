@@ -12,7 +12,14 @@ class Client extends Model {
         },
         name: Sequelize.STRING,
         email: Sequelize.STRING,
-        cpf_cnpj: Sequelize.STRING,
+        phone: Sequelize.STRING,
+        google_id: Sequelize.STRING,
+        client_status: {
+          type: Sequelize.ENUM(
+            'active','inactive','blocked'),
+          allowNull: false,
+          defaultValue: 'active',
+        },
         cep: Sequelize.STRING,
         rua: Sequelize.STRING,
         number_house: Sequelize.STRING,
@@ -21,7 +28,6 @@ class Client extends Model {
         uf: Sequelize.STRING,
         password: Sequelize.VIRTUAL,
         password_hash: Sequelize.STRING,
-        number_client: Sequelize.STRING,
         update_number: Sequelize.STRING,
       },
       {
@@ -49,6 +55,11 @@ class Client extends Model {
     this.hasMany(models.Order, {
       foreignKey: 'client_id',
       as: 'orders',
+    })
+
+    this.hasMany(models.Budget, {
+      foreignKey: 'client_id',
+      as: 'budgets',
     })
   }
 }

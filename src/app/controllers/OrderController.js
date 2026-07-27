@@ -1,7 +1,6 @@
-import * as Yup from "yup";
-import Order from "../models/Order.js";
-import ServiceProducts from "../models/ServicesProducts.js";
 import validator from "validator";
+import * as Yup from "yup";
+import OrderService from "../services/OrderService.js";
 
 const sanitize = (data) => {
   const sanitized = {};
@@ -23,16 +22,23 @@ class OrderController {
       order_number: Yup.string().required(),
       status_description: Yup.string().required(),
       status: Yup.string().required(),
-      total: Yup.number().positive().required(),
       products: Yup.array()
         .of(
           Yup.object().shape({
             product_name: Yup.string().required(),
             quantity: Yup.number().positive().required(),
-            price: Yup.number().positive().required(),
+            unit_price: Yup.number().positive().required(),
           })
         )
         .required(),
+      address: yup.object().shape({
+        cep: Yup.string().min(8).max(9).required(),
+        rua: Yup.string().required(),
+        number_house: Yup.string().required(),
+        bairro: Yup.string().required(),
+        cidade: Yup.string().required(),
+        uf: Yup.string().length(2).required(),
+      })
     });
 
     try {
@@ -47,58 +53,51 @@ class OrderController {
         order_number,
         status_description,
         status,
-        total,
         products,
+        address,
       } = body;
 
-      // 1️⃣ Cria pedido
-      const service = await Order.create({
+      const orderService = {
         client_id,
         order_number,
         status_description,
         status,
-        total,
-      });
+        products,
+        address
+      };
 
-      // 2️⃣ Produtos associados
-      const productsToInsert = products.map((p) => ({
-        service_id: service.id,
-        product_name: p.product_name,
-        quantity: p.quantity,
-        price: p.price,
-        subtotal: p.quantity * p.price,
-      }));
+      const order =  await OrderService.createOrders(orderService);
+      response.status(201).json({ message: "Pedido criado com sucesso!", order: order });
 
-      await ServiceProducts.bulkCreate(productsToInsert, {
-        validate: true,
-      });
-
-      return response.status(201).json({
-        message: "Pedido criado com sucesso!",
-        order: {
-          ...service.toJSON(),
-          products: productsToInsert,
-        },
-      });
     } catch (error) {
-      console.error("Erro interno no store:", error);
       return response.status(500).json({
-        error: "Erro interno do servidor",
+        error: error.message,
       });
     }
   }
 
   async index (request, response) {
-    try {
-      const list = await Order.findAll({
-        include: [{ model: ServiceProducts, as: "products" }],
-        order: [["createdAt", "DESC"]],
-      });
 
+    try {
+      const userId = request.userId;
+      const list = await OrderService.getAllOrders(userId);
       return response.json(list);
     } catch (error) {
       console.error("Erro no index:", error);
       return response.status(500).json({ error: "Erro interno do servidor" });
+    }
+  }
+
+  async show (request, response) {
+    try {
+      const id = request.userId;
+
+      const order = await OrderService.getOrderById(id);
+
+      return response.json(order);
+    } catch (error) {
+      console.error("Erro no show:", error);
+      return response.status(500).json({ error: "Erro interno do servidor", error: error.message });
     }
   }
 
@@ -110,14 +109,6 @@ class OrderController {
       order_number: Yup.string(),
       status_description: Yup.string(),
       status: Yup.string(),
-      total: Yup.number().positive(),
-      products: Yup.array().of(
-        Yup.object().shape({
-          product_name: Yup.string().required(),
-          quantity: Yup.number().positive().required(),
-          price: Yup.number().positive().required(),
-        })
-      ),
     });
 
     try {
@@ -129,45 +120,27 @@ class OrderController {
     try {
       const { id } = request.params;
 
-      const order = await Order.findByPk(id);
+      const { client_id, order_number, status_description, status } = body;
 
-      if (!order) {
-        return response.status(404).json({ error: "Pedido não encontrado" });
+      const updatedData = {
+        client_id,
+        order_number,
+        status_description,
+        status,
+      };
+
+      try {
+        await OrderService.updateOrder(id, updatedData, request.transaction);
+        return response.status(200).json({
+          message: "Pedido atualizado com sucesso!"
+        });
+      } catch (error) {
+        console.error("Erro ao atualizar pedido:", error);
+        return response.status(500).json({ error: "Erro interno do servidor" });
       }
-
-      const { client_id, order_number, status_description, status, total, products } = body;
-
-      // Atualiza apenas campos enviados
-      await order.update({
-        ...(client_id && { client_id }),
-        ...(order_number && { order_number }),
-        ...(status_description && { status_description }),
-        ...(status && { status }),
-        ...(typeof total === "number" && { total }),
-      });
-
-      // Atualiza produtos
-      if (products) {
-        await ServiceProducts.destroy({ where: { service_id: id } });
-
-        const productsToInsert = products.map((p) => ({
-          service_id: id,
-          product_name: p.product_name,
-          quantity: p.quantity,
-          price: p.price,
-          subtotal: p.quantity * p.price,
-        }));
-
-        await ServiceProducts.bulkCreate(productsToInsert);
-      }
-
-      const updatedOrder = await Order.findByPk(id, {
-        include: [{ model: ServiceProducts, as: "products" }],
-      });
 
       return response.status(200).json({
-        message: "Pedido atualizado com sucesso!",
-        order: updatedOrder,
+        message: "Pedido atualizado com sucesso!"
       });
     } catch (error) {
       console.error("Erro no update:", error);

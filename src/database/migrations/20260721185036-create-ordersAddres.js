@@ -1,42 +1,24 @@
 'use strict';
 
 /** @type {import('sequelize-cli').Migration} */
-module.exports = {
+export default {
   async up (queryInterface, Sequelize) {
-    await queryInterface.createTable('client', {
-      id: {
+    await queryInterface.createTable('order_address', {
+       id: {
         type: Sequelize.UUID,
         defaultValue: Sequelize.UUIDV4,
         allowNull: false,
         primaryKey: true,
       },
-      name: {
-        type: Sequelize.STRING,
-        allowNull: false,
-        unique: true,
-      },
-      email: {
-        type: Sequelize.STRING,
-        allowNull: false,
-        unique: true,
-      },
-      cpf_cnpj: {
-        type: Sequelize.STRING,
-        allowNull: false,
-        unique: true,
-      },
-      password_hash: {
-        type: Sequelize.STRING,
+      order_id: {
+        type: Sequelize.UUID,
         allowNull: true,
-      },
-      number_client: {
-        type: Sequelize.STRING,
-        allowNull: false,
-      },
-      update_number: {
-        type: Sequelize.STRING,
-        allowNull: false,
-        defaultValue: '',
+        references: {
+          model: 'order',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
       },
       cep: {
         type: Sequelize.STRING,
@@ -66,16 +48,14 @@ module.exports = {
         type: Sequelize.DATE,
         allowNull: false,
       },
-      updated_at: {
+        updated_at: {
         type: Sequelize.DATE,
         allowNull: false,
       },
-    });
-
+    })
   },
 
   async down (queryInterface, Sequelize) {
-    await queryInterface.dropTable('client');
-
+   await queryInterface.dropTable('order_address');
   }
 };

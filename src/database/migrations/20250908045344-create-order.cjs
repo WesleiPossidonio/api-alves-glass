@@ -1,35 +1,40 @@
 'use strict';
 
 /** @type {import('sequelize-cli').Migration} */
-module.exports = {
+export default {
   async up (queryInterface, Sequelize) {
-    queryInterface.createTable('services_products', {
+    await queryInterface.createTable('order', {
       id: {
         type: Sequelize.UUID,
         defaultValue: Sequelize.UUIDV4,
         allowNull: false,
         primaryKey: true,
       },
-      service_id: {
+      client_id: {
         type: Sequelize.UUID,
         allowNull: true,
         references: {
-          model: 'order',
+          model: 'client',
           key: 'id',
         },
         onUpdate: 'CASCADE',
         onDelete: 'SET NULL'
       },
-      product_name: {
+      order_number: {
+        type: Sequelize.STRING,
+        allowNull: false,
+        unique: true,
+      },
+      status_description: {
         type: Sequelize.STRING,
         allowNull: false
       },
-      quantity: {
+      status: {
         type: Sequelize.STRING,
         allowNull: false
       },
-      price: {
-        type: Sequelize.STRING,
+      total: {
+        type: Sequelize.INTEGER,
         allowNull: false
       },
       created_at: {
@@ -45,6 +50,6 @@ module.exports = {
   },
 
   async down (queryInterface, Sequelize) {
-    await queryInterface.dropTable('services_products');
+    await queryInterface.dropTable('order');
   }
 };

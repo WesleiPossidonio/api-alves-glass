@@ -1,11 +1,21 @@
 import Sequelize from 'sequelize'
+
 import configDataBase from '../config/database.js'
 import Client from '../app/models/Client.js'
 import User from '../app/models/User.js'
 import Order from '../app/models/Order.js'
-import ServicesProducts from '../app/models/ServicesProducts.js'
+import OrdersProducts from '../app/models/OrdersProducts.js'
+import Budget from '../app/models/Budget.js'
+import OrderAddress from '../app/models/OrderAddress.js'
 
-const models = [Client, User, Order, ServicesProducts]
+const models = [
+  Client,
+  User,
+  Order,
+  OrdersProducts,
+  Budget,
+  OrderAddress
+]
 
 class Database {
   constructor() {

@@ -14,7 +14,16 @@ class User extends Model {
         email: Sequelize.STRING,
         password: Sequelize.VIRTUAL,
         password_hash: Sequelize.STRING,
-        admin: Sequelize.BOOLEAN,
+        status_users: {
+          type: Sequelize.STRING,
+          allowNull: false,
+          defaultValue: 'active',
+        },
+        role: {
+          type: Sequelize.ENUM('admin', 'user'),
+          allowNull: false,
+          defaultValue: 'user',
+        },
         update_number: Sequelize.STRING,
       },
       {

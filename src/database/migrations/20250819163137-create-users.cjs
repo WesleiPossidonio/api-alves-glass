@@ -1,5 +1,5 @@
 'use strict'
-module.exports = {
+export default {
   async up (queryInterface, Sequelize) {
     await queryInterface.createTable('users', {
       id: {
@@ -22,10 +22,15 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false,
       },
-      admin: {
-        type: Sequelize.BOOLEAN,
-        defaultValue: false,
+      role: {
+        type: Sequelize.ENUM('admin', 'user'),
         allowNull: false,
+        defaultValue: 'user',
+      },
+      status_users: {
+        type: Sequelize.STRING,
+        allowNull: false,
+        defaultValue: 'active',
       },
       update_number: {
         type: Sequelize.STRING,
