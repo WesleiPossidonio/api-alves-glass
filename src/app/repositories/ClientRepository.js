@@ -1,3 +1,4 @@
+import Budget from '../models/Budget.js';
 import Client from '../models/Client.js';
 
 class ClientRepository {
@@ -26,6 +27,7 @@ class ClientRepository {
     "updatedAt"
   ],
     order: [["createdAt", "ASC"]],
+    include: [{ model: Budget, as: "budgets" }],
   });
  }
 

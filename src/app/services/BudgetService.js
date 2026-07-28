@@ -13,10 +13,10 @@ class BudgetService {
       let pdfName = null
 
       if (filePdf) {
-        pdfName = await StorageService.upload({
-          file: filePdf,
-          folder: 'budgets/2026'
-        })
+         pdfName = await StorageService.upload(
+          filePdf,
+          "budgets/2026"
+        );
       }
 
       const budget = await Budget.create({
@@ -39,8 +39,8 @@ class BudgetService {
 
       return budgets;
     } catch (error) {
-      throw new Error('Erro ao buscar orçamento.');
       console.error('Erro ao buscar orçamento:', error);
+      throw new Error('Erro ao buscar orçamento.');
     }
   }
 
