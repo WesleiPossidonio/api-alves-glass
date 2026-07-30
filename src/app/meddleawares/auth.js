@@ -2,25 +2,25 @@ import Jwt from 'jsonwebtoken'
 import authConfig from '../../config/auth.js'
 
 export default (request, response, next) => {
-  const authToken = request.headers.authorization
+  const token = request.cookies.token
 
-  if (!authToken) {
-    return response.status(401).json({ error: 'Token not provided' })
+  if (!token) {
+    return response.status(401).json({ 
+      error: 'Token not provided' 
+    })
   }
-
-  const token = authToken.split(' ')[1]
 
   try {
-    Jwt.verify(token, authConfig.secret, function (err, decoded) {
-      if (err) {
-        throw new Error()
-      }
+    const decoded = Jwt.verify(token, authConfig.secret)
 
-      request.userId = decoded.id
-      request.userName = decoded.name
-    })
+    request.userId = decoded.id
+    request.userRole = decoded.role
+
+    return next()
+
   } catch {
-    return response.status(401).json({ error: 'Token is invalid' })
+    return response.status(401).json({ 
+      error: 'Token is invalid' 
+    })
   }
-  return next()
 }

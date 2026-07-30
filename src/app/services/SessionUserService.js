@@ -10,7 +10,7 @@ class SessionUserService {
         const user = await UserRepository.findByEmail(email);
         if (user && (await user.checkPassword(password))) {
           const token = jwt.sign(
-            { id: user.id },
+            { id: user.id, role: user.role },
             authConfig.secret,
             { expiresIn: authConfig.expiresIn }
           );
