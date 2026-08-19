@@ -70,7 +70,7 @@ class OrderService {
     }
   }
 
-  async getOrderById(id) {
+  async getOrdersByClientId(id) {
     try {
       const order = await OrderRepository.findByOrderClientId(id);
 

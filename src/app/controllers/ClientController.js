@@ -89,9 +89,20 @@ class ClientController {
 
   async index (request, response) {
     const id = request.userId
+    const {
+      page,
+      limit,
+      search,
+    } = request.query
+
+    const filters = {
+      page,
+      limit,
+      search,
+    }
 
     try {
-      const listClients = await ClientService.getAllClients(id)
+      const listClients = await ClientService.getAllClients(id, filters)
       return response.status(200).json(listClients)
     }catch (err) {
        return response.status(400).json({error: err.message})
@@ -100,7 +111,6 @@ class ClientController {
 
   async getclientData( request, response){
     const id = request.userId
-
     try {
       const listClients = await ClientService.getDataClient(id)
       return response.status(200).json(listClients)

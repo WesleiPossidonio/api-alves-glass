@@ -7,6 +7,10 @@ import Order from '../app/models/Order.js'
 import OrdersProducts from '../app/models/OrdersProducts.js'
 import Budget from '../app/models/Budget.js'
 import OrderAddress from '../app/models/OrderAddress.js'
+import Category from '../app/models/Category.js'
+import ProductCategory from '../app/models/ProductCategory.js'
+import Product from '../app/models/Product.js'
+import StockMovements from '../app/models/StockMovements.js'
 
 const models = [
   Client,
@@ -14,7 +18,11 @@ const models = [
   Order,
   OrdersProducts,
   Budget,
-  OrderAddress
+  OrderAddress,
+  Category,
+  ProductCategory,
+  Product,
+  StockMovements
 ]
 
 class Database {

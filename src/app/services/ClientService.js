@@ -65,24 +65,34 @@ class ClientService {
 
   }
 
-  async getAllClients(userId){
+  async getAllClients(userId, filters){
    const existsAdminUser = await UserRepository.findById(userId)
-
     if (!existsAdminUser || existsAdminUser.role !== 'admin') {
       throw new Error('Acesso negado');
     }
 
+    const { page, limit, search} =filters
+
     try {
-      const listClients = await ClientRepository.findAll()
+      if (search?.trim()) {
+        return ClientRepository.findAllWithSearch({
+          page: Number(page),
+          limit: Number(limit),
+          search: search.trim(),
+        });
+      }
+
+      const listClients = await ClientRepository.findAll({
+        page: Number(page),
+        limit: Number(limit), 
+      })
       return listClients
     } catch (error) {
       throw new Error(error)
     }
   }
 
-
   async getDataClient(id){
-
     try {
       const client = await ClientRepository.findById(id);
         if (!client) {

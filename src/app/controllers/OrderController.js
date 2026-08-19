@@ -31,14 +31,14 @@ class OrderController {
           })
         )
         .required(),
-      address: yup.object().shape({
-        cep: Yup.string().min(8).max(9).required(),
-        rua: Yup.string().required(),
-        number_house: Yup.string().required(),
-        bairro: Yup.string().required(),
-        cidade: Yup.string().required(),
-        uf: Yup.string().length(2).required(),
-      })
+          address: Yup.object().shape({
+            cep: Yup.string().min(8).max(9).required(),
+            rua: Yup.string().required(),
+            number_house: Yup.string().required(),
+            bairro: Yup.string().required(),
+            cidade: Yup.string().required(),
+            uf: Yup.string().length(2).required(),
+        }).required(),
     });
 
     try {
@@ -66,12 +66,13 @@ class OrderController {
         address
       };
 
-      const order =  await OrderService.createOrders(orderService);
+      const order = await OrderService.createOrders(orderService);
       response.status(201).json({ message: "Pedido criado com sucesso!", order: order });
 
-    } catch (error) {
+    } catch (err) {
+      console.log(err)
       return response.status(500).json({
-        error: error.message,
+        error: err.message,
       });
     }
   }
@@ -91,8 +92,7 @@ class OrderController {
   async show (request, response) {
     try {
       const id = request.userId;
-
-      const order = await OrderService.getOrderById(id);
+      const order = await OrderService.getOrdersByClientId(id);
 
       return response.json(order);
     } catch (error) {

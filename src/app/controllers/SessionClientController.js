@@ -16,7 +16,16 @@ class SessionClientController {
 
     try {
       const token = await SessionClientService.loginClient({ email, password });
-      return response.json({ token });
+          return response
+      .cookie('token', token, {
+        httpOnly: true,
+        secure: false, // true em produção com HTTPS
+        sameSite: 'lax',
+        maxAge: 1000 * 60 * 60 * 24, // 1 dia
+      })
+      .json({
+        authenticated: true,
+      });
     } catch (error) {
       return response.status(401).json({ error: 'Invalid credentials' });
     }

@@ -16,12 +16,13 @@ const routes = new Router();
 routes.post('/session/user', SessionsController.store);
 routes.post('/session/client', SessionClientController.store);
 routes.post('/google-session', GoogleSessionController.store);
-routes.get('/check-auth', SessionsController.index);
+
 
 routes.post('/sendEmail', EmailController.send);
 routes.post('/createUser', UserController.store);
 
 routes.use(authMiddlewares);
+routes.get('/check-auth', SessionsController.index);
 routes.get('/user/all', UserController.index);
 routes.put('/user/:id', UserController.update);
 routes.post('/budged', upload.single('file'), BudgetController.store)
