@@ -180,10 +180,22 @@ exista. O bootstrap é dividido em etapas ordenadas:
    `baseline_meta.SequelizeMetaBaseline`, sem aceitar `search_path`, `public` ou schema inesperado.
 
 O bootstrap protegido cria somente banco autorizado e ausente; a aplicação inicial da baseline é
-etapa posterior, somente para banco autorizado e comprovadamente vazio. Reexecução de banco já
-íntegro retorna `already-current`; migration já registrada retorna `migration-already-recorded`;
-divergência ou aplicação parcial retorna `recovery-required`. Nenhum desses fluxos executa `DROP`,
-recriação ou recuperação automática.
+etapa posterior, somente para banco autorizado e comprovadamente vazio. Esta condição é o preflight
+destrutivo T012 e pertence exclusivamente ao modo `apply`: ele não aceita banco existente não vazio.
+
+O modo `status` é uma entrada independente e estritamente não destrutiva para banco isolado já
+inicializado. Ele exige adaptador autenticado de observação, identidade efetiva autorizada pela
+allowlist/denylist T006, destino isolado aprovado, caminho canônico e evidência de catálogo/histórico
+coletada sem alterar objetos. Para retornar `already-current`, a evidência deve comprovar
+`baseline_meta.SequelizeMetaBaseline` por relação qualificada, sem `search_path`, sua estrutura
+canônica, a lista completa de migrations do caminho canônico, a correspondência exata com o histórico
+observado e schema consistente para cada migration. Inconsistência comprovada retorna
+`recovery-required`; ausência, ambiguidade, falha do adaptador ou prova incompleta retorna `blocked`.
+`status` não executa CLI, bootstrap, DDL, migrations, cleanup ou recovery e seu sucesso não é
+autorização reutilizável para `apply`.
+
+Migration já registrada retorna `migration-already-recorded`; divergência ou aplicação parcial
+retorna `recovery-required`. Nenhum desses fluxos executa `DROP`, recriação ou recuperação automática.
 
 Uma operação que pretenda apagar ou recriar estruturas em banco existente é um fluxo destrutivo
 separado, com solicitação explícita, preflight próprio de instância e banco, confirmação de
@@ -195,10 +207,14 @@ não destrutivos e nunca autorizam drop, recriação de banco ou limpeza de estr
 1. Validar unidade de configuração, preflight de instância, identidade do banco, equivalência ao
    original, caminho canônico, fronteiras de camada, propagação transacional e mapeamento seguro de
    erros.
-2. Em PostgreSQL isolado, provar que bootstrap bloqueia instância original/ambígua antes de conectar
+2. Em PostgreSQL isolado autorizado, provar que bootstrap bloqueia instância original/ambígua antes de conectar
    para criar banco, que criação só aceita banco isolado ausente, e que banco existente não é
-   removido/recriado pelo baseline. Provar também aplicação limpa, dez reexecuções controladas sem
-   DDL, reaplicação registrada sem alteração e recovery obrigatório após falha parcial.
+   removido/recriado pelo baseline. Provar aplicação limpa somente após T012 em banco vazio. Provar
+   separadamente que `status`, por adaptador autenticado/read-only, classifica banco íntegro como
+   `already-current` sem CLI/DDL, classifica evidência parcial/divergente como `recovery-required` e
+   bloqueia evidência ausente/ambígua/insuficiente. Nenhuma dessas provas transforma `status` em
+   autorização de aplicação. Provar também reaplicação registrada sem alteração e recovery obrigatório
+   após falha parcial.
 3. Criar fixtures separadas para `SequelizeMeta` e `SequelizeMetaBaseline`; provar isolamento do
    baseline para o legado e do legado para o baseline, inclusive em listagem/status e escrita.
 4. Quando houver `migrationStorageTableSchema`, validar que o schema existe, que a tabela

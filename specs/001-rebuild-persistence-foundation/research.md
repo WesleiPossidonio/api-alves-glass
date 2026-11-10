@@ -128,7 +128,7 @@ do baseline contra execução legada futura.
 | Estado | Pré-condição | Resultado seguro |
 | --- | --- | --- |
 | Aplicação em banco vazio | Banco isolado vazio, identidade e caminho aprovados | `rebuild-complete`; aplica baseline e valida schema/meta. |
-| Reexecução | Banco reconstruído, sem pendências | `already-current`; não executa DDL. |
+| Status de banco inicializado íntegro | Observação autenticada completa prova identidade autorizada, metadata/histórico canônicos e schema consistente | `already-current`; não executa CLI, DDL ou migrations. |
 | Reaplicação registrada | Migration consta em metadata consistente | `migration-already-recorded`; não altera schema. |
 | Aplicação parcial/divergência | Schema e metadata não comprovam conclusão | `recovery-required`; não marca nem repete automaticamente. |
 | Recriação destrutiva de banco existente | Solicitação explícita, preflight específico de instância/banco e confirmação de identidade | Fluxo separado; não é acionado por baseline nem por reexecução. |
@@ -140,7 +140,40 @@ inspeção do schema/histórico, diagnóstico e ação explícita aprovada; reex
 **Alternatives considered**: repetir migration falha ou marcar conclusão para liberar pipeline
 (rejeitados: podem duplicar DDL ou quebrar evidência entre schema e histórico).
 
-## Decisão 7 — Configuração, lifecycle e transações explícitos
+## Decisão 7 — Status observacional separado do preflight de aplicação
+
+**Decision**: Preservar T012 como preflight fail-closed exclusivo de `apply`: banco existente,
+identidade efetiva autorizada e estado comprovadamente vazio antes de CLI, metadata técnica ou DDL.
+Definir `status` como observação independente, autenticada e estritamente read-only de banco isolado
+já inicializado. O adaptador de observação é responsabilidade da camada operacional/integrada, deve
+provar a identidade efetiva autorizada e só pode retornar fatos observados de catálogo, metadata,
+histórico e schema; ele não recebe capacidade de bootstrap, CLI, migration, DDL, cleanup ou recovery.
+
+`already-current` exige prova completa: destino efetivo autorizado e não protegido; relação
+qualificada `baseline_meta.SequelizeMetaBaseline` sem fallback por `search_path`; estrutura canônica
+da metadata; conjunto completo/determinístico de migrations do caminho canônico; histórico observado
+exatamente correspondente; e schema consistente para todas as migrations canônicas. Inconsistência
+positiva e suficiente produz `recovery-required`. Ausência de identidade autenticada, destino fora
+da allowlist, ambiguidade, falha de leitura ou qualquer lacuna/contradição de evidência produz
+`blocked`.
+
+**Rationale**: Um banco íntegro não satisfaz a condição de vazio de T012. Reutilizar T012 para
+`status` enfraqueceria o gate de aplicação; aceitar evidência declarativa sem observação autenticada
+permitiria classificar um banco desconhecido como atual. A separação mantém um único orquestrador
+T030, mas impede que o resultado de leitura seja promoção implícita para escrita.
+
+**Alternatives considered**: aceitar banco não vazio no T012 (rejeitado: altera seu significado e
+libera CLI contra estado não vazio); executar CLI em `status` (rejeitado: pode autenticar/criar
+metadata); usar sucesso de `status` como token para `apply` (rejeitado: observação não substitui o
+preflight destrutivo atual).
+
+**Testes obrigatórios**: em PostgreSQL isolado e explicitamente autorizado após T006, provar que o
+adaptador autenticado observa sem mutação, que banco íntegro obtém `already-current`, que metadata,
+histórico ou schema inconsistentes obtêm `recovery-required`, e que identidade ausente/ambígua,
+destino não autorizado ou evidência incompleta obtêm `blocked`. Spies devem comprovar ausência de
+CLI, bootstrap, DDL, migrations e cleanup em todas as execuções de `status`.
+
+## Decisão 8 — Configuração, lifecycle e transações explícitos
 
 **Decision**: Leitura/validação de ambiente fica separada da criação de conexões. Lifecycle valida
 configuração, executa preflights aplicáveis, conecta recursos e só então expõe prontidão; falhas
@@ -151,7 +184,7 @@ Controllers não controlam transações nem acessam Models diretamente.
 diagnósticos sem segredos. Efeitos de importação e leitura dispersa de `process.env` dificultam
 isolamento e testes.
 
-## Decisão 8 — Testes com Node nativo e PostgreSQL real isolado
+## Decisão 9 — Testes com Node nativo e PostgreSQL real isolado
 
 **Decision**: Usar `node:test`/`node:assert` no Node 22 e PostgreSQL real isolado, sem biblioteca
 adicional. Cada cenário seleciona somente destino de teste validado; nunca o banco original.
@@ -166,5 +199,9 @@ que tenham Model correspondente; não cria domínio artificial.
    destinos autorizados e a denylist de identidades protegidas, incluindo o original, nos campos
    ambiente/host/porta/database/perfil. O mecanismo fail-closed e `baseline_meta` estão aprovados;
    os valores reais não são inferidos.
-2. **Estruturas de infraestrutura:** somente poderão entrar em migration futura se estritamente
+2. **Adaptador de observação de status:** aprovar responsável, credencial/autenticação operacional e
+   contrato read-only para observar identidade efetiva, catálogo qualificado, histórico e schema de
+   destinos isolados. Sem prova real T006 e sem esse adaptador, `status` operacional permanece
+   `blocked`; o adaptador não pode conceder capacidade de `apply`.
+3. **Estruturas de infraestrutura:** somente poderão entrar em migration futura se estritamente
    necessárias, justificadas e aprovadas; esta feature não cria tabela ou Model de domínio.

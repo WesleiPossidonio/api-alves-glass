@@ -1,2 +1,14 @@
 node_modules
+
+# Configuração real e identidades operacionais permanecem fora do repositório.
 .env
+.baseline-identity.json
+.env.persistence-containers
+.env.persistence-api-dev
+.env.persistence-api-test
+
+# Yarn Classic é o único lockfile oficial desta feature.
+# Não gerar nem versionar lockfiles alternativos.
+package-lock.json
+*.lock
+!yarn.lock

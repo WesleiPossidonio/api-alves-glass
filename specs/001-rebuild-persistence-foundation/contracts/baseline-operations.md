@@ -12,7 +12,7 @@ Por isso, o preflight externo é obrigatório antes do CLI.
 
 | Perfil | Finalidade | Operações permitidas |
 | --- | --- | --- |
-| `development-rebuild` | Aplicar baseline em banco isolado vazio. | Preflight da instância/banco, criação protegida somente se ausente, baseline/status e verificação. Exige registros reais T006 validados; não recria banco existente. |
+| `development-rebuild` | Aplicar baseline em banco isolado vazio ou observar banco isolado já inicializado. | `apply`: preflight da instância/banco e baseline somente com T012 comprovando vazio. `status`: observação autenticada/read-only independente para banco inicializado. Ambos exigem registros reais T006 validados; nenhum recria banco existente. |
 | `test` | Validar fundação contra PostgreSQL isolado. | Fixtures, preflight, migrations, testes, recovery simulado e limpeza. Fixtures não autorizam operações reais de `development-rebuild`. |
 | `inventory-readonly` | Inspecionar legado/original. | Leitura de schema, metadata e evidências; nenhuma ação destrutiva. |
 | `data-preservation` | Fluxo futuro opcional. | Somente após inventário, backup, reconciliação, aprovação e rollback. |
@@ -35,8 +35,54 @@ Por isso, o preflight externo é obrigatório antes do CLI.
 Nenhuma entrada, saída, log ou diagnóstico expõe segredo/credencial.
 
 Enquanto a allowlist e a denylist reais não tiverem sido fornecidas e validadas pelo responsável,
-operações reais de bootstrap e rebuild retornam `blocked`. Fixtures isoladas do perfil `test` podem
-ser usadas somente para validar o mecanismo fail-closed.
+operações reais de bootstrap, `apply` e `status` retornam `blocked`. Fixtures isoladas do perfil
+`test` podem ser usadas somente para validar o mecanismo fail-closed.
+
+## Modos do único orquestrador T030
+
+### `apply` — aplicação controlada em banco vazio
+
+`apply` preserva integralmente T012. Antes de CLI, bootstrap técnico, criação de metadata ou DDL,
+deve receber preflight T012 `validated` que comprove: identidade efetiva autenticada e autorizada;
+destino isolado aprovado e não protegido; database existente; e database comprovadamente vazio. Em
+seguida, pode executar exclusivamente a composição controlada CLI → validação pós-CLI da metadata →
+diagnóstico T029. O resultado de sucesso é `rebuild-complete`.
+
+Banco não vazio, prova ausente, identidade ambígua/divergente, caminho não canônico, metadata
+inesperada ou adaptador ausente bloqueiam `apply`. `apply` nunca infere que um banco é atual, não faz
+`DROP`, recriação, limpeza ou recovery automático e não usa um resultado anterior de `status` como
+substituto para T012.
+
+### `status` — observação autenticada de banco inicializado
+
+`status` não executa CLI, bootstrap, SQL de escrita, DDL, migrations, cleanup ou recovery. Ele exige
+um adaptador operacional autenticado e estritamente read-only, responsável por coletar e devolver
+evidência observada — nunca por decidir autorização de escrita. O orquestrador valida novamente a
+identidade efetiva contra allowlist/denylist T006 e aceita apenas destino isolado aprovado.
+
+`current_database()` e demais dados da sessão PostgreSQL comprovam apenas a sessão autenticada e o
+database selecionado; não comprovam sozinhos host/porta físicos, container ou instância. O adaptador
+deve portanto exigir uma prova operacional do endpoint conectado, além da identidade observada pelo
+PostgreSQL. No profile local isolado `test`, a prova aprovada é: inspeção Docker read-only, coletada
+no host confiável exclusivamente para `postgres-alves-glass-test`, com container, serviço Compose,
+rede, IDs de rede/endpoint e IP; runner efêmero na rede de teste; e correlação exata do IP/porta da
+sessão autenticada com o endpoint inspecionado. O runner não recebe Docker socket e conecta somente a
+`postgres-test:5432`; `localhost:5434` não é fallback. Um atestado Ed25519 externo, assinado e com
+proveniência/fingerprint verificáveis, continua alternativa para ambientes que o exigirem. Se a prova
+aplicável ou os privilégios necessários não estiverem disponíveis, `status` retorna `blocked`; não
+pode inferir identidade física por nome de database, `search_path` ou configuração declarativa.
+
+Para `already-current`, a evidência mínima e cumulativa é: (1) identidade efetiva completa,
+autenticada, autorizada e não protegida; (2) caminho canônico e conjunto completo de migrations
+canônicas; (3) `baseline_meta.SequelizeMetaBaseline` existente e resolvida por nome qualificado, sem
+`search_path`, com schema, tabela, coluna `name` e constraint esperados; (4) histórico observado
+exatamente igual ao conjunto canônico; e (5) schema consistente para cada migration. Inconsistência
+comprovada retorna `recovery-required`; qualquer ausência, ambiguidade, erro de observação,
+contradição não conclusiva ou lacuna retorna `blocked`.
+
+O resultado de `status`, inclusive `already-current`, é informativo e não concede capacidade,
+autorização, recibo nem promoção para `apply`. Toda chamada futura de `apply` reinicia seus próprios
+gates, inclusive T012.
 
 ## Bootstrap seguro e ordem obrigatória de execução
 
@@ -74,7 +120,7 @@ ser usadas somente para validar o mecanismo fail-closed.
 | `database-created` | Banco isolado ausente foi criado após `instance-validated`; não significa que baseline foi aplicado. |
 | `validated` | Identidade do banco, original protegido e caminho canônico foram aprovados; não significa DDL executado. |
 | `rebuild-complete` | Baseline foi aplicado a banco isolado vazio e metadata/schema foram validados; não implica drop ou recriação de banco existente. |
-| `already-current` | Banco já reconstruído não tem pendências; nenhuma alteração de schema ocorreu. |
+| `already-current` | Somente `status` com observação autenticada completa prova que banco isolado já inicializado tem identidade autorizada, metadata/histórico canônicos e schema consistente; nenhuma alteração de schema ocorreu. |
 | `migration-already-recorded` | Pedido de reaplicar migration em metadata consistente; schema não é alterado. |
 | `metadata-isolated` | Executor usou somente caminho/metadata próprios; outro executor não foi lido ou alterado. |
 | `blocked` | Falha de ambiente, identidade, isolamento, original, configuração ou caminho; em preflight, CLI/DDL não iniciou. |
@@ -98,9 +144,10 @@ ser usadas somente para validar o mecanismo fail-closed.
    inspecionados antes de uso; não remover, recriar ou sobrescrever objetos existentes. Depois do
    CLI, vale exclusivamente `baseline_meta.SequelizeMetaBaseline`, com `name` não nulo/PK/única.
    `public.SequelizeMeta` é legado independente; nunca aceitar fallback a outro schema.
-7. Aplicação em banco vazio, reexecução, reaplicação registrada, recovery parcial e recriação
-   destrutiva de banco existente são fluxos separados. Reexecução nunca autoriza apagar/recriar
-   banco ou estruturas.
+7. Aplicação em banco vazio e observação de banco inicializado são fluxos separados: `apply` usa
+   exclusivamente T012; `status` exige observação autenticada/read-only e nunca executa CLI/DDL.
+   `already-current` nunca autoriza apagar/recriar banco ou estruturas, nem promove `status` para
+   `apply`.
 8. Recriação destrutiva de banco existente, se vier a ser aprovada, exige solicitação explícita,
    preflight próprio de instância e banco, confirmação de identidade e testes específicos; não é
    executada pelo fluxo de baseline desta feature.
@@ -114,14 +161,18 @@ ser usadas somente para validar o mecanismo fail-closed.
 | Preflight da instância | Ambiente desenvolvimento, allowlist/denylist completas e identidade efetiva autorizada | `instance-validated`; executor administrativo ainda não criou banco. |
 | Instância insegura | Ambiente não desenvolvimento, registro ausente, host/porta original, ambíguos, perfil inválido ou divergência efetiva | `blocked` antes de conexão administrativa e `CREATE DATABASE`. |
 | Criar banco ausente | Instância validada e nome isolado ausente | `database-created`; somente o banco declarado é criado. |
-| Banco existente | Banco isolado declarado já existe | Não há drop/recriação automática; fluxo baseline segue apenas se estado vazio for comprovado, senão bloqueia/encaminha fluxo explícito. |
+| Banco existente vazio (`apply`) | Banco isolado declarado existe, identidade autorizada e T012 prova vazio | `validated` → CLI controlado → `rebuild-complete`; não há drop/recriação. |
+| Banco existente íntegro (`status`) | Adaptador autenticado/read-only fornece evidência completa de identidade, metadata canônica, histórico e schema | `already-current`; sem CLI, bootstrap, DDL ou migrations. |
+| Banco existente não vazio sem prova completa | Banco isolado declarado existe, mas não há evidência observacional completa | `blocked`; não inferir `already-current` e não executar `apply`. |
 | Aplicação em banco vazio | Banco isolado vazio e preflight aprovado | `validated` → `rebuild-complete`; metadata/schema validados. |
-| Reexecução | Banco baseline íntegro e atual | `already-current`; nenhuma linha/DDL nova. |
+| Status de banco íntegro | Adaptador autenticado/read-only prova integralmente identidade, metadata/histórico canônicos e schema consistente | `already-current`; nenhuma linha/CLI/DDL nova. |
 | Reaplicação registrada | Nome em metadata consistente | `migration-already-recorded`; schema inalterado. |
 | Aplicação parcial | Fixture interrompe após mudança controlada | `recovery-required`; nome não é marcado nem reaplicado. |
+| Observação parcial/divergente | Metadata, histórico ou schema observados são inconsistentes de forma comprovada | `recovery-required`; sem correção automática. |
+| Observação ambígua/insuficiente | Identidade, autorização, catálogo, histórico ou schema não é comprovado integralmente | `blocked`; sem CLI, DDL, migration ou bootstrap. |
 | Baseline → legado | `SequelizeMeta` tem fixture legada | Baseline só usa `SequelizeMetaBaseline`; legado/caminho legado inalterados. |
 | Legado → baseline | `SequelizeMetaBaseline` tem fixture baseline | Legado só usa `SequelizeMeta`; baseline/caminho baseline inalterados. |
 | Caminho inválido | Ausente, legado ou não canônico | `blocked` antes do CLI; sem schema técnico, metadata ou DDL. |
 | Identidade insegura | Original, ambígua ou perfil inválido | `blocked` antes de ação destrutiva; schema/dados preservados. |
 | Schema de metadata | `migrationStorageTableSchema: 'baseline_meta'` explícito | Após CLI, somente `baseline_meta.SequelizeMetaBaseline` existe/é usada e tem estrutura esperada; `public.SequelizeMeta` legado permanece intacto. |
-| T006 pendente de registros reais | Allowlist/denylist operacionais ainda não fornecidas | Bootstrap/rebuild reais retornam `blocked`; somente fixtures `test` isoladas podem validar o mecanismo. |
+| T006 pendente de registros reais | Allowlist/denylist operacionais ainda não fornecidas | Bootstrap, `apply` e `status` reais retornam `blocked`; somente fixtures `test` isoladas podem validar o mecanismo. |
