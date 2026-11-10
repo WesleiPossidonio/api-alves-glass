@@ -1,0 +1,121 @@
+x-api-image: &api-image
+  image: alves-glass-api:development
+  build:
+    context: .
+    dockerfile: docker/dockerfile
+
+services:
+  api-dev:
+    <<: *api-image
+    container_name: api-alves-glass-dev
+    restart: unless-stopped
+    command: ["yarn", "dev"]
+    ports:
+      - "${API_DEV_HOST_PORT:-3000}:3000"
+    volumes:
+      - .:/app
+      - api_node_modules:/app/node_modules
+    env_file:
+      - .env.persistence-api-dev
+    environment:
+      NODE_ENV: development
+      DB_HOST: postgres-rebuild
+      DB_PORT: "5432"
+      DB_DATABASE: alvesglass_rebuild
+      PERSISTENCE_PROFILE: development-rebuild
+      PERSISTENCE_INSTANCE_HOST: postgres-rebuild
+      PERSISTENCE_INSTANCE_PORT: "5432"
+      PERSISTENCE_INSTANCE_PROFILE: development-rebuild
+      BASELINE_DB_HOST: postgres-rebuild
+      BASELINE_DB_PORT: "5432"
+      BASELINE_DB_DATABASE: alvesglass_rebuild
+      PERSISTENCE_PROTECTED_ORIGINAL_REFERENCE: legacy-development-alvesglass
+      BASELINE_IDENTITY_CONFIG_PATH: /app/.baseline-identity.json
+    depends_on:
+      postgres-rebuild:
+        condition: service_healthy
+    networks:
+      - persistence-rebuild-network
+
+  api-test:
+    <<: *api-image
+    profiles: ["test"]
+    command: ["yarn", "test"]
+    restart: "no"
+    volumes:
+      - .:/app:ro
+      - api_node_modules:/app/node_modules
+    env_file:
+      - .env.persistence-api-test
+    environment:
+      NODE_ENV: test
+      DB_HOST: postgres-test
+      DB_PORT: "5432"
+      DB_DATABASE: alvesglass_test
+      PERSISTENCE_PROFILE: test
+      PERSISTENCE_INSTANCE_HOST: postgres-test
+      PERSISTENCE_INSTANCE_PORT: "5432"
+      PERSISTENCE_INSTANCE_PROFILE: test
+      BASELINE_DB_HOST: postgres-test
+      BASELINE_DB_PORT: "5432"
+      BASELINE_DB_DATABASE: alvesglass_test
+      PERSISTENCE_PROTECTED_ORIGINAL_REFERENCE: legacy-development-alvesglass
+      BASELINE_IDENTITY_CONFIG_PATH: /app/.baseline-identity.json
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    networks:
+      - persistence-test-network
+
+  postgres-rebuild:
+    image: postgres:17
+    container_name: postgres-alves-glass-rebuild
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${REBUILD_POSTGRES_DB:?Configure REBUILD_POSTGRES_DB in .env.persistence-containers}
+      POSTGRES_USER: ${REBUILD_POSTGRES_USER:?Configure REBUILD_POSTGRES_USER in .env.persistence-containers}
+      POSTGRES_PASSWORD: ${REBUILD_POSTGRES_PASSWORD:?Configure REBUILD_POSTGRES_PASSWORD in .env.persistence-containers}
+    ports:
+      - "${REBUILD_POSTGRES_HOST_PORT:-5433}:5432"
+    volumes:
+      - postgres_rebuild_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - persistence-rebuild-network
+
+  postgres-test:
+    image: postgres:17
+    container_name: postgres-alves-glass-test
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${TEST_POSTGRES_DB:?Configure TEST_POSTGRES_DB in .env.persistence-containers}
+      POSTGRES_USER: ${TEST_POSTGRES_USER:?Configure TEST_POSTGRES_USER in .env.persistence-containers}
+      POSTGRES_PASSWORD: ${TEST_POSTGRES_PASSWORD:?Configure TEST_POSTGRES_PASSWORD in .env.persistence-containers}
+    ports:
+      - "${TEST_POSTGRES_HOST_PORT:-5434}:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - persistence-test-network
+
+volumes:
+  api_node_modules:
+  postgres_rebuild_data:
+  postgres_test_data:
+
+networks:
+  persistence-rebuild-network:
+    driver: bridge
+  persistence-test-network:
+    driver: bridge

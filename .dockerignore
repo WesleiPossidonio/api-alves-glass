@@ -4,8 +4,10 @@ dist
 build
 tmp
 logs
-# env
+# env e identidades operacionais
 .env
+.env.*
+.baseline-identity.json
 
 # controle de versão
 .git
@@ -21,6 +23,7 @@ logs
 uploads
 storage
 
-# docker interno
-Dockerfile
-docker-compose.yml
+# dados locais de PostgreSQL
+postgres_data
+postgres_rebuild_data
+postgres_test_data

@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "migrations": [
+    {
+      "name": "20261110000000-create-baseline-foundation.cjs",
+      "objects": [
+        {
+          "schema": "baseline_meta",
+          "name": "BaselineFoundation",
+          "kind": "table",
+          "fingerprint": "6ff7f96f837fbc37c25e551aaedb4a5d"
+        }
+      ]
+    }
+  ]
+}
