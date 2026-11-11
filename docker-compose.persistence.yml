@@ -22,15 +22,6 @@ services:
       DB_HOST: postgres-rebuild
       DB_PORT: "5432"
       DB_DATABASE: alvesglass_rebuild
-      PERSISTENCE_PROFILE: development-rebuild
-      PERSISTENCE_INSTANCE_HOST: postgres-rebuild
-      PERSISTENCE_INSTANCE_PORT: "5432"
-      PERSISTENCE_INSTANCE_PROFILE: development-rebuild
-      BASELINE_DB_HOST: postgres-rebuild
-      BASELINE_DB_PORT: "5432"
-      BASELINE_DB_DATABASE: alvesglass_rebuild
-      PERSISTENCE_PROTECTED_ORIGINAL_REFERENCE: legacy-development-alvesglass
-      BASELINE_IDENTITY_CONFIG_PATH: /app/.baseline-identity.json
     depends_on:
       postgres-rebuild:
         condition: service_healthy
@@ -52,15 +43,6 @@ services:
       DB_HOST: postgres-test
       DB_PORT: "5432"
       DB_DATABASE: alvesglass_test
-      PERSISTENCE_PROFILE: test
-      PERSISTENCE_INSTANCE_HOST: postgres-test
-      PERSISTENCE_INSTANCE_PORT: "5432"
-      PERSISTENCE_INSTANCE_PROFILE: test
-      BASELINE_DB_HOST: postgres-test
-      BASELINE_DB_PORT: "5432"
-      BASELINE_DB_DATABASE: alvesglass_test
-      PERSISTENCE_PROTECTED_ORIGINAL_REFERENCE: legacy-development-alvesglass
-      BASELINE_IDENTITY_CONFIG_PATH: /app/.baseline-identity.json
     depends_on:
       postgres-test:
         condition: service_healthy

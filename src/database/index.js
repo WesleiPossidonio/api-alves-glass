@@ -22,7 +22,7 @@ const models = [
   Category,
   ProductCategory,
   Product,
-  StockMovements
+  StockMovements,
 ]
 
 class Database {
@@ -37,6 +37,7 @@ class Database {
       .map(
         (model) => model.associate && model.associate(this.connection.models)
       )
+    this.models = this.connection.models
   }
 }
 

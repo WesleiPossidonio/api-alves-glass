@@ -7,6 +7,8 @@ COPY package.json yarn.lock ./
 
 RUN yarn install --frozen-lockfile
 
+RUN node -e "require('argon2')"
+
 COPY . .
 
 EXPOSE 3000

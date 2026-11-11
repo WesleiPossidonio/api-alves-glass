@@ -10,7 +10,10 @@ class Product extends Model {
           allowNull: false,
           primaryKey: true,
         },
-        category_id: Sequelize.INTEGER,
+        category_id: {
+          type: Sequelize.INTEGER,
+          allowNull: false,
+        },
         control_level: Sequelize.ENUM('FREE', 'RESTRICTED'),
         item_name: Sequelize.STRING,
         unit: Sequelize.STRING,
@@ -23,6 +26,7 @@ class Product extends Model {
       {
         sequelize,
         tableName: 'Product',
+        freezeTableName: true,
       },
     )
     return this

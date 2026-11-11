@@ -4,7 +4,8 @@ class ProductCategory extends Model {
   static init(sequelize) {
     super.init(
       {
-        name: Sequelize.STRING,
+        id: { type: Sequelize.INTEGER, autoIncrement: true, primaryKey: true },
+        name: { type: Sequelize.STRING, allowNull: false },
       },
       {
         sequelize,

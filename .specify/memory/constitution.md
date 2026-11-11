@@ -2,6 +2,10 @@
 
 ## Core Principles
 
+> A seção de persistência vigente está em “Persistência atual do repositório” em Governance. Ela
+> substitui referências históricas da Feature 001 a baseline customizado, manifest, preflights e
+> metadata paralela.
+
 ### I. Integridade Transacional e Dados
 
 PostgreSQL MUST ser a fonte oficial para entidades operacionais, saldos e histórico de estoque.
@@ -99,6 +103,16 @@ idempotent loading, measured rehearsal, and rollback criteria; a production main
 required only when an actual production cutover is approved.
 
 ## Governance
+
+### Persistência atual do repositório
+
+Para o ambiente local descartável atual, PostgreSQL 16 usa Sequelize 6 e Sequelize CLI convencional:
+`src/database/migrations/` e metadata `public.SequelizeMeta`. O baseline personalizado, manifest,
+preflights e metadata paralela foram abandonados; não devem ser reintroduzidos nas próximas features.
+Migrations já aplicadas não devem ser editadas. Uma nova alteração de schema deve ser aditiva,
+revisada e validada contra banco local descartável. Esta decisão substitui, para o estado atual do
+repositório, as instruções de baseline anteriores da Feature 001; não autoriza alteração em banco
+compartilhado ou de produção.
 
 Esta Constituição prevalece sobre práticas locais que contrariem seus princípios.
 Specifications, plans, tasks e implementações MUST respeitar esta Constituição.
