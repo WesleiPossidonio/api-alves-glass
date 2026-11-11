@@ -10,8 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NODE_ENV: test
-      SECRET_KAY: ci-only-test-secret-not-for-production-0123456789abcdef
-      GOOGLE_CLIENT_ID: 123456789012-ci-test.apps.googleusercontent.com
+      SECRET_KAY: ${{ secrets.SECRET_KAY }}
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
 
     steps:
       - name: Checkout repository
