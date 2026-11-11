@@ -99,9 +99,8 @@ class BudgetController {
 
     async index(request, response) {
 
-        const clientId = request.userId;
         try {
-            const budgets = await BudgetService.getBudgetByClientId(ClientId);
+            const budgets = await BudgetService.getBudgetByClientId(request.userId);
             return response.status(200).json(budgets);
         } catch (error) {
             return response.status(500).json({ error: "Internal server error" });

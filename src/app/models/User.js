@@ -1,4 +1,5 @@
 import Sequelize, { Model } from 'sequelize'
+import { hashPassword, validatePassword } from '../services/passwordHashing.js'
 import bcrypt from 'bcrypt'
 
 class User extends Model {
@@ -35,16 +36,19 @@ class User extends Model {
 
     this.addHook('beforeSave', async (user) => {
       if (user.password) {
-        user.password_hash = await bcrypt.hash(user.password, 10)
+        user.password_hash = await hashPassword(user.password)
       }
     })
 
     return this
   }
 
-  checkPassword (password) {
-    return bcrypt.compare(password, this.password_hash)
+  checkPassword(password) {
+    return validatePassword(password, this.password_hash, {
+      legacyVerifier: (plain, hash) => bcrypt.compare(plain, hash),
+    })
   }
+
 }
 
 export default User

@@ -20,7 +20,7 @@ class UserController {
       name: Yup.string().required(),
       email: Yup.string().email().required(),
       password: Yup.string().required().min(6),
-      role: Yup.string().oneOf(['admin', 'user']).required(),
+      role: Yup.string().oneOf(['admin', 'user']).optional(),
     })
 
     const sanitizedBody = sanitizeInput(request.body)
@@ -31,7 +31,8 @@ class UserController {
       return response.status(400).json({ error: err.errors })
     }
 
-    const { name, email, password, role } = sanitizedBody
+    const { name, email, password } = sanitizedBody
+    const role = request.userRole === 'admin' && sanitizedBody.role === 'admin' ? 'admin' : 'user'
     
     const userData = {
       name,

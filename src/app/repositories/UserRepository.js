@@ -10,8 +10,8 @@ class UserRepository {
   return await User.findOne({ where: data})
  }
 
- async findById(id) {
-   return await User.findByPk(id);
+ async findById(id, options = {}) {
+   return await User.findByPk(id, options);
  }
 
  async findAll () {

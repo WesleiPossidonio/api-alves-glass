@@ -11,6 +11,8 @@ import Category from '../app/models/Category.js'
 import ProductCategory from '../app/models/ProductCategory.js'
 import Product from '../app/models/Product.js'
 import StockMovements from '../app/models/StockMovements.js'
+import AuthSession from '../app/models/AuthSession.js'
+import AuthSessionRefreshToken from '../app/models/AuthSessionRefreshToken.js'
 
 const models = [
   Client,
@@ -23,6 +25,8 @@ const models = [
   ProductCategory,
   Product,
   StockMovements,
+  AuthSession,
+  AuthSessionRefreshToken,
 ]
 
 class Database {
