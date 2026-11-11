@@ -18,11 +18,9 @@
     "dev": "nodemon",
     "debug": "nodemon --inspect",
     "start": "node -r sucrase/register src/server.js",
-    "preflight": "node -e \"console.error('Blocked: persistence preflight is unavailable until T007-T010 are implemented safely.'); process.exitCode = 1\"",
-    "bootstrap:protected": "node -e \"console.error('Blocked: protected bootstrap is unavailable until T011-T012 are implemented and T006 records are approved.'); process.exitCode = 1\"",
-    "baseline:status": "node scripts/database/baseline/run-local-test-status.js",
-    "test:integration:persistence": "node scripts/database/baseline/run-local-test-integration.js",
-    "baseline:apply": "node -e \"console.error('Blocked: baseline application is unavailable until T030 is implemented and T006 records are approved.'); process.exitCode = 1\""
+    "db:migrate": "sequelize-cli db:migrate",
+    "db:migrate:undo": "sequelize-cli db:migrate:undo",
+    "db:migrate:status": "sequelize-cli db:migrate:status"
   },
   "type": "module",
   "keywords": [],
@@ -30,6 +28,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "argon2": "^0.45.2",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",

@@ -1,10 +1,15 @@
 import { Sequelize } from 'sequelize';
+import Database from '../../database/index.js';
 import Budget from '../models/Budget.js';
 import Client from '../models/Client.js';
 
 class ClientRepository {
   async findByEmail (email) {
     return await Client.findOne({ where: { email } });
+  }
+
+  async findByGoogleId (googleId) {
+    return Client.findOne({ where: { google_id: googleId } });
   }
 
   async findById (id) {
@@ -57,7 +62,7 @@ class ClientRepository {
     } = filters;
 
     const offset = (page - 1) * limit;
-    const clients = await sequelize.query(
+    const clients = await Database.connection.query(
       `
     SELECT
       clients.*,

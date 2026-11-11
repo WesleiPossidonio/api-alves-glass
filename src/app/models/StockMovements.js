@@ -10,7 +10,7 @@ class StockMovements extends Model {
           allowNull: false,
           primaryKey: true,
         },
-        item_id: {
+        product_id: {
           type: Sequelize.UUID,
           allowNull: false,
         },
@@ -69,7 +69,7 @@ class StockMovements extends Model {
 
     this.belongsTo(models.User, {
       foreignKey: 'user_id',
-      as: 'client',
+      as: 'user',
     })
   }
 }

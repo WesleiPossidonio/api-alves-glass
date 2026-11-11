@@ -11,6 +11,8 @@ import Category from '../app/models/Category.js'
 import ProductCategory from '../app/models/ProductCategory.js'
 import Product from '../app/models/Product.js'
 import StockMovements from '../app/models/StockMovements.js'
+import AuthSession from '../app/models/AuthSession.js'
+import AuthSessionRefreshToken from '../app/models/AuthSessionRefreshToken.js'
 
 const models = [
   Client,
@@ -22,7 +24,9 @@ const models = [
   Category,
   ProductCategory,
   Product,
-  StockMovements
+  StockMovements,
+  AuthSession,
+  AuthSessionRefreshToken,
 ]
 
 class Database {
@@ -37,6 +41,7 @@ class Database {
       .map(
         (model) => model.associate && model.associate(this.connection.models)
       )
+    this.models = this.connection.models
   }
 }
 

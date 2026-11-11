@@ -7,34 +7,43 @@ import OrderController from './app/controllers/OrderController.js';
 import OrderProductsController from './app/controllers/OrderProductsController.js';
 import SessionClientController from './app/controllers/SessionClientController.js';
 import SessionsController from './app/controllers/SessionsController.js';
+import SessionLifecycleController from './app/controllers/SessionLifecycleController.js';
 import UserController from './app/controllers/UserController.js';
 import authMiddlewares from './app/meddleawares/auth.js';
 import upload from './config/multer.js';
+import { createAuthRateLimit } from './app/meddleawares/authRateLimit.js'
+import { requireAdmin, requireClient, requireUser } from './app/meddleawares/authorize.js'
+import { requireOwner } from './app/meddleawares/ownership.js'
 
 const routes = new Router();
+const userLoginRateLimit = createAuthRateLimit({ max: 5 })
+const clientLoginRateLimit = createAuthRateLimit({ max: 5 })
+const googleLoginRateLimit = createAuthRateLimit({ max: 10 })
+const refreshRateLimit = createAuthRateLimit({ max: 30 })
 
-routes.post('/session/user', SessionsController.store);
-routes.post('/session/client', SessionClientController.store);
-routes.post('/google-session', GoogleSessionController.store);
+routes.post('/session/user', userLoginRateLimit, SessionsController.store);
+routes.post('/session/client', clientLoginRateLimit, SessionClientController.store);
+routes.post('/google-session', googleLoginRateLimit, GoogleSessionController.store);
+routes.post('/session/refresh', refreshRateLimit, SessionLifecycleController.refresh.bind(SessionLifecycleController));
+routes.post('/session/logout', SessionLifecycleController.logout.bind(SessionLifecycleController));
 
 
 routes.post('/sendEmail', EmailController.send);
-routes.post('/createUser', UserController.store);
-
 routes.use(authMiddlewares);
-routes.get('/check-auth', SessionsController.index);
-routes.get('/user/all', UserController.index);
-routes.put('/user/:id', UserController.update);
-routes.post('/budged', upload.single('file'), BudgetController.store)
+routes.get('/check-auth', (request, response) => response.json({ authenticated: true, userId: request.userId, role: request.userRole, actorType: request.actorType }));
+routes.post('/createUser', requireAdmin, UserController.store);
+routes.get('/user/all', requireAdmin, UserController.index);
+routes.put('/user/:id', requireUser, requireOwner({ roles: ['admin'], resourceType: 'user' }), UserController.update);
+routes.post('/budged', requireAdmin, upload.single('file'), BudgetController.store)
 
-routes.post('/client', ClientController.store);
-routes.get('/client/all', ClientController.index);
-routes.get('/client/me', ClientController.getclientData);
-routes.put('/client/:id', ClientController.update);
+routes.post('/client', requireAdmin, ClientController.store);
+routes.get('/client/all', requireAdmin, ClientController.index);
+routes.get('/client/me', requireClient, ClientController.getclientData);
+routes.put('/client/:id', requireAdmin, ClientController.update);
 
-routes.post('/order', OrderController.store);
-routes.get('/order/all', OrderController.index);
-routes.get('/order/me', OrderController.show);
-routes.patch('/order/:id', OrderController.update);
-routes.patch('/orders/:id/products', OrderProductsController.update);
+routes.post('/order', requireAdmin, OrderController.store);
+routes.get('/order/all', requireAdmin, OrderController.index);
+routes.get('/order/me', requireClient, OrderController.show);
+routes.patch('/order/:id', requireAdmin, OrderController.update);
+routes.patch('/orders/:id/products', requireAdmin, OrderProductsController.update);
 export default routes;

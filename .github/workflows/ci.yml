@@ -8,6 +8,10 @@ on:
 jobs:
   unit-tests:
     runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      SECRET_KAY: ${{ secrets.SECRET_KAY }}
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
 
     steps:
       - name: Checkout repository

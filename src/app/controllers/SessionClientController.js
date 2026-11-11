@@ -1,5 +1,6 @@
-import * as Yup from 'yup';
+import * as Yup from 'yup'
 import SessionClientService from '../services/SessionClientService.js';
+import { csrfCookieOptions } from '../services/sessionSecurity.js'
 
 class SessionClientController {
   async store (request, response) {
@@ -8,21 +9,30 @@ class SessionClientController {
       password: Yup.string().required(),
     });
 
-    const { email, password } = request.body;
+    const { email, password } = request.body ?? {};
 
     if (!(await schema.isValid({ email, password }))) {
       return response.status(401).json({ error: 'Invalid credentials' });
     }
 
     try {
-      const token = await SessionClientService.loginClient({ email, password });
-          return response
-      .cookie('token', token, {
+      const session = await SessionClientService.loginClient({ email, password });
+      return response
+      .cookie('access_token', session.accessToken, {
         httpOnly: true,
-        secure: false, // true em produção com HTTPS
+        secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 1000 * 60 * 60 * 24, // 1 dia
+        path: '/',
+        maxAge: 15 * 60 * 1000,
       })
+      .cookie('refresh_token', session.refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/session',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      })
+      .cookie('csrf_token', session.csrfToken, csrfCookieOptions(7 * 24 * 60 * 60 * 1000))
       .json({
         authenticated: true,
       });

@@ -4,8 +4,9 @@ class Category extends Model {
   static init(sequelize) {
     super.init(
       {
-        name: Sequelize.STRING,
-        category_section_id: Sequelize.INTEGER,
+        id: { type: Sequelize.INTEGER, autoIncrement: true, primaryKey: true },
+        name: { type: Sequelize.STRING, allowNull: false },
+        category_section_id: { type: Sequelize.INTEGER, allowNull: false },
       },
       {
         sequelize,
