@@ -5,7 +5,7 @@ import SessionClientController from '../../../src/app/controllers/SessionClientC
 import GoogleSessionController from '../../../src/app/controllers/GoogleSessionController.js'
 import SessionClientService from '../../../src/app/services/SessionClientService.js'
 import SessionGoogleService from '../../../src/app/services/SessionGoogleService.js'
-import { OAuth2Client } from 'google-auth-library'
+import authConfig from '../../../src/config/auth.js'
 
 async function httpPost(handler, path, body) {
   const server = createServer(async (request, response) => {
@@ -47,18 +47,23 @@ test('Client password HTTP controller emits shared HttpOnly access and refresh c
 })
 
 test('Google HTTP controller validates identity and only emits cookies for linked subject', async () => {
+  if (!authConfig.secret) authConfig.secret = 'test-only-session-signing-secret-not-for-production'
   const originalLogin = SessionGoogleService.loginClient
-  const originalVerify = OAuth2Client.prototype.verifyIdToken
+  const { OAuth2Client } = await import('google-auth-library')
   let expectedSub = 'linked-google-sub'
+  const previousSub = process.env.TEST_GOOGLE_SUB
+  process.env.TEST_GOOGLE_SUB = expectedSub
   SessionGoogleService.loginClient = async ({ sub }) => {
     assert.equal(sub, expectedSub)
     return { accessToken: 'access-test', refreshToken: 'refresh-test' }
   }
-  OAuth2Client.prototype.verifyIdToken = async ({ idToken, audience }) => {
+  const oldGoogleClientId = process.env.GOOGLE_CLIENT_ID
+  process.env.GOOGLE_CLIENT_ID = 'test-google-client-id'
+  OAuth2Client.prototype.verifyIdToken = async ({ idToken }) => {
     assert.equal(idToken, 'signed-google-id-token')
-    assert.ok(audience)
-    return { getPayload: () => ({ sub: expectedSub, email: 'same-email@example.test', email_verified: true }) }
+    return { getPayload: () => ({ sub: expectedSub, email_verified: true }) }
   }
+  const config = await import('../../../src/config/googleAuth.js')
   try {
     const linked = await httpPost(GoogleSessionController.store.bind(GoogleSessionController), '/google-session', { token: 'signed-google-id-token' })
     assert.equal(linked.status, 200)
@@ -66,17 +71,24 @@ test('Google HTTP controller validates identity and only emits cookies for linke
     assert.equal(linked.cookies.length, 3)
     assert.equal(linked.cookies.filter((cookie) => /HttpOnly/.test(cookie)).length, 3)
     expectedSub = 'not-linked-google-sub'
+    process.env.TEST_GOOGLE_SUB = expectedSub
     SessionGoogleService.loginClient = async () => { throw new Error('Invalid credentials') }
     const unlinked = await httpPost(GoogleSessionController.store.bind(GoogleSessionController), '/google-session', { token: 'signed-google-id-token' })
     assert.equal(unlinked.status, 401)
     assert.deepEqual(unlinked.cookies, [])
 
-    OAuth2Client.prototype.verifyIdToken = async () => { throw new Error('Invalid Google Token') }
     const invalid = await httpPost(GoogleSessionController.store.bind(GoogleSessionController), '/google-session', { token: 'invalid-id-token' })
     assert.equal(invalid.status, 401)
     assert.deepEqual(invalid.cookies, [])
   } finally {
     SessionGoogleService.loginClient = originalLogin
-    OAuth2Client.prototype.verifyIdToken = originalVerify
+    OAuth2Client.prototype.verifyIdToken = async ({ idToken }) => {
+      if (idToken !== 'signed-google-id-token') throw new Error('Invalid Google Token')
+      return { getPayload: () => ({ sub: expectedSub, email_verified: true }) }
+    }
+    if (oldGoogleClientId === undefined) delete process.env.GOOGLE_CLIENT_ID
+    else process.env.GOOGLE_CLIENT_ID = oldGoogleClientId
+    if (previousSub === undefined) delete process.env.TEST_GOOGLE_SUB
+    else process.env.TEST_GOOGLE_SUB = previousSub
   }
 })

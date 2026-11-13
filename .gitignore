@@ -1,5 +1,16 @@
 node_modules
 
+# Keep runtime credentials and local deployment state out of version control.
+.env
+.env.*
+!.env.example
+.env.persistence-containers
+.env.persistence-api-dev
+.env.persistence-api-test
+/deploy/feature003-test/.env
+/deploy/feature003-test/.env.minio-test
+/deploy/feature003-test/.env.minio-app-test
+
 # Configuração real e identidades operacionais permanecem fora do repositório.
 .env
 .baseline-identity.json

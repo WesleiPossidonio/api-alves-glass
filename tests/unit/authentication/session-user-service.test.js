@@ -8,6 +8,8 @@ import AuthSessionRefreshTokenRepository from '../../../src/app/repositories/Aut
 import Database from '../../../src/database/index.js'
 import { hashPassword } from '../../../src/app/services/passwordHashing.js'
 import SessionUserService from '../../../src/app/services/SessionUserService.js'
+import authConfig from '../../../src/config/auth.js'
+
 
 const originalFindByEmail = UserRepository.findByEmail
 const originalCreateSession = AuthSessionRepository.create
@@ -17,6 +19,7 @@ const sessions = []
 const refreshRecords = []
 
 test('US1: login User ativo cria sessão e persiste somente SHA-256 do Refresh Token na mesma transação', async () => {
+  if (!authConfig.secret) authConfig.secret = 'test-only-session-signing-secret-not-for-production'
   const user = { id: 'user-uuid', email: 'admin@example.test', role: 'admin', status_users: 'active', password_hash: await hashPassword('correct-password') }
   user.checkPassword = async (password) => (await import('../../../src/app/services/passwordHashing.js')).validatePassword(password, user.password_hash, {
     legacyVerifier: (plain, hash) => import('bcrypt').then(({ default: bcrypt }) => bcrypt.compare(plain, hash)),

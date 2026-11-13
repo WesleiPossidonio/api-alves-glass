@@ -1,0 +1,74 @@
+name: feature003-integration-isolated
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: feature003-integration-postgres
+    environment:
+      POSTGRES_DB: feature003_integration
+      POSTGRES_USER: ${F003_IT_PG_USER:?set unique disposable user}
+      POSTGRES_PASSWORD: ${F003_IT_PG_PASSWORD:?set unique disposable password}
+    ports:
+      - "127.0.0.1:55438:5432"
+    volumes:
+      - feature003_it_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+    restart: "no"
+
+  mongodb:
+    image: mongo:8
+    container_name: feature003-integration-mongodb
+    entrypoint: ["/bin/sh", "/opt/mongo-entrypoint.sh"]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${F003_IT_MONGO_USER:?set unique disposable user}
+      MONGO_INITDB_ROOT_PASSWORD: ${F003_IT_MONGO_PASSWORD:?set unique disposable password}
+      MONGO_INITDB_DATABASE: feature003_integration
+      REPLICA_SET_ADVERTISE_HOST: feature003-integration-mongodb:27017
+    ports:
+      - "127.0.0.1:27028:27017"
+    networks:
+      default:
+        aliases:
+          - feature003-integration-mongodb
+    volumes:
+      - feature003_it_mongodata:/data/db
+      - feature003_it_mongokey:/run/mongodb-key
+      - ./mongo-entrypoint.sh:/opt/mongo-entrypoint.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --username \"$$MONGO_INITDB_ROOT_USERNAME\" --password \"$$MONGO_INITDB_ROOT_PASSWORD\" --authenticationDatabase admin --eval 'try { rs.status().ok } catch (e) { rs.initiate({_id: \"feature003-rs\", members: [{_id: 0, host: \"localhost:27017\"}]}); 0 }' | grep -q 1"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    restart: "no"
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: feature003-integration-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${F003_IT_RABBIT_USER:?set unique disposable user}
+      RABBITMQ_DEFAULT_PASS: ${F003_IT_RABBIT_PASSWORD:?set unique disposable password}
+    ports:
+      - "127.0.0.1:5678:5672"
+      - "127.0.0.1:15678:15672"
+    volumes:
+      - feature003_it_rabbitdata:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    restart: "no"
+
+volumes:
+  feature003_it_pgdata:
+    name: feature003_it_pgdata
+  feature003_it_mongodata:
+    name: feature003_it_mongodata
+  feature003_it_mongokey:
+    name: feature003_it_mongokey
+  feature003_it_rabbitdata:
+    name: feature003_it_rabbitdata
