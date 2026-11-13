@@ -26,6 +26,9 @@ class User extends Model {
           defaultValue: 'user',
         },
         update_number: Sequelize.STRING,
+        pin_hash: Sequelize.STRING(255),
+        pin_lookup: Sequelize.STRING(64),
+        pin_revoked_at: Sequelize.DATE,
       },
       {
         sequelize,
@@ -47,6 +50,13 @@ class User extends Model {
     return validatePassword(password, this.password_hash, {
       legacyVerifier: (plain, hash) => bcrypt.compare(plain, hash),
     })
+  }
+
+  static associate(models) {
+    this.hasMany(models.UserSector, { foreignKey: 'user_id', as: 'sectorGrants' })
+    this.hasMany(models.UserSector, { foreignKey: 'granted_by', as: 'sectorGrantsCreated' })
+    this.hasMany(models.SectorAuthorizationAudit, { foreignKey: 'actor_user_id', as: 'sectorAuthorizationActions' })
+    this.hasMany(models.SectorAuthorizationAudit, { foreignKey: 'affected_user_id', as: 'sectorAuthorizationHistory' })
   }
 
 }

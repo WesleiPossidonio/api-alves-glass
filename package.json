@@ -13,14 +13,18 @@
     "sequelize-cli": "^6.6.3"
   },
   "scripts": {
-    "test": "node --test \"tests/unit/**/*.test.js\"",
-    "test:watch": "node --watch --test \"tests/unit/**/*.test.js\"",
+    "test": "node --test --test-concurrency=1 \"tests/unit/**/*.test.js\" \"unit/configuration/*.test.js\" \"unit/persistence/*.test.js\" \"unit/stock/*.test.js\"",
+    "test:watch": "node --watch --test --test-concurrency=1 \"tests/unit/**/*.test.js\" \"unit/configuration/*.test.js\" \"unit/persistence/*.test.js\" \"unit/stock/*.test.js\"",
+    "test:integration": "node --test tests/integration/*.postgres.test.js tests/integration/stock/*.postgres.test.js",
+    "inventory:outbox-worker": "node src/app/services/InventoryOutboxPublisher.js",
+    "inventory:projection-consumer": "node src/app/services/InventoryProjectionConsumer.js",
     "dev": "nodemon",
     "debug": "nodemon --inspect",
     "start": "node -r sucrase/register src/server.js",
     "db:migrate": "sequelize-cli db:migrate",
     "db:migrate:undo": "sequelize-cli db:migrate:undo",
-    "db:migrate:status": "sequelize-cli db:migrate:status"
+    "db:migrate:status": "sequelize-cli db:migrate:status",
+    "test:integration:cqrs": "node --test tests/integration/stock/cqrs-real.integration.test.js"
   },
   "type": "module",
   "keywords": [],
@@ -28,6 +32,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "amqplib": "^2.3.1",
     "argon2": "^0.45.2",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
@@ -39,6 +44,7 @@
     "jsonwebtoken": "^9.0.2",
     "minio": "^8.0.7",
     "mjml": "^4.16.1",
+    "mongodb": "^7.8.0",
     "multer": "^2.2.0",
     "nodemailer": "^8.0.5",
     "pg": "^8.22.0",

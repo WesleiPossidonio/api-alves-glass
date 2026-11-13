@@ -8,6 +8,7 @@ import jwt from 'jsonwebtoken'
 import authConfig from '../../../src/config/auth.js'
 import { createServer } from 'node:http'
 
+
 async function post(handler, path, { cookies = {}, headers = {}, onCookie } = {}) {
   const server = createServer(async (req, res) => {
     req.cookies = cookies
@@ -25,6 +26,7 @@ async function post(handler, path, { cookies = {}, headers = {}, onCookie } = {}
 }
 
 test('refresh and logout HTTP require allowed Origin plus session-bound CSRF and rotate/clear cookies', async () => {
+  if (!authConfig.secret) authConfig.secret = 'test-only-session-signing-secret-not-for-production'
   const sid = 'session-http-test'; const csrf = csrfTokenForSession(sid)
   const access = jwt.sign({ sid, sub: 'subject', actor_type: 'user' }, authConfig.secret, { expiresIn: 600 })
   const originalRefresh = LifecycleService.refresh; const originalLogout = LifecycleService.logout; const originalLookup = RefreshRepository.findSessionIdByHash

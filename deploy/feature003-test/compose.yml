@@ -1,0 +1,85 @@
+name: feature003-disposable
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: feature003-postgres-test
+    environment:
+      POSTGRES_DB: feature003_ephemeral
+      POSTGRES_USER: ${FEATURE003_TEST_USER:?Generate a local disposable username}
+      POSTGRES_PASSWORD: ${FEATURE003_TEST_PASSWORD:?Generate a local disposable password}
+    ports:
+      - "127.0.0.1:55437:5432"
+    volumes:
+      - feature003_pgdata:/var/lib/postgresql/data
+    networks:
+      - feature003-test-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+    restart: "no"
+
+  mongodb:
+    image: mongo:8
+    container_name: feature003-mongodb-test
+    command: ["mongod", "--replSet", "feature003-rs", "--bind_ip_all"]
+    entrypoint: ["/bin/sh", "/opt/mongo-entrypoint.sh"]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${FEATURE003_MONGO_USER:?Generate a local disposable username}
+      MONGO_INITDB_ROOT_PASSWORD: ${FEATURE003_MONGO_PASSWORD:?Generate a local disposable password}
+      MONGO_INITDB_DATABASE: ${FEATURE003_MONGO_DATABASE:-feature003_ephemeral}
+    ports:
+      - "127.0.0.1:27027:27017"
+    volumes:
+      - feature003_mongodata:/data/db
+      - feature003_mongokey:/run/mongodb-key
+      - ./mongo-entrypoint.sh:/opt/mongo-entrypoint.sh:ro
+    networks:
+      - feature003-test-net
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --username \"$$MONGO_INITDB_ROOT_USERNAME\" --password \"$$MONGO_INITDB_ROOT_PASSWORD\" --authenticationDatabase admin --eval 'try { rs.status().ok } catch (e) { rs.initiate({_id: \"feature003-rs\", members: [{_id: 0, host: \"localhost:27017\"}]}); 0 }' | grep -q 1"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    restart: "no"
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: feature003-rabbitmq-test
+    environment:
+      RABBITMQ_DEFAULT_USER: ${FEATURE003_RABBITMQ_USER:?Generate a local disposable username}
+      RABBITMQ_DEFAULT_PASS: ${FEATURE003_RABBITMQ_PASSWORD:?Generate a local disposable password}
+    ports:
+      - "127.0.0.1:5677:5672"
+      - "127.0.0.1:15677:15672"
+    volumes:
+      - feature003_rabbitmqdata:/var/lib/rabbitmq
+    networks:
+      - feature003-test-net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    restart: "no"
+
+volumes:
+  feature003_pgdata:
+    name: feature003_pgdata
+    external: false
+  feature003_mongodata:
+    name: feature003_mongodata
+    external: false
+  feature003_mongokey:
+    name: feature003_mongokey
+    external: false
+  feature003_rabbitmqdata:
+    name: feature003_rabbitmqdata
+    external: false
+
+networks:
+  feature003-test-net:
+    name: feature003-test-net
+    internal: false

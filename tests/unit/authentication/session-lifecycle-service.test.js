@@ -6,6 +6,8 @@ import AuthSessionRefreshTokenRepository from '../../../src/app/repositories/Aut
 import SessionLifecycleService from '../../../src/app/services/SessionLifecycleService.js'
 import { hashRefreshToken } from '../../../src/app/services/sessionSecurity.js'
 import UserRepository from '../../../src/app/repositories/UserRepository.js'
+import authConfig from '../../../src/config/auth.js'
+
 
 const originals = { transaction: Database.connection.transaction, userFind: UserRepository.findById, sessionFind: AuthSessionRepository.findByIdForUpdate, sessionRevoke: AuthSessionRepository.revoke, touch: AuthSessionRepository.updateLastUsed, tokenFind: AuthSessionRefreshTokenRepository.findByHash, consume: AuthSessionRefreshTokenRepository.consume, create: AuthSessionRefreshTokenRepository.create, revokeTokens: AuthSessionRefreshTokenRepository.revokeActiveForSession }
 function restore() { Object.assign(Database.connection, { transaction: originals.transaction }); Object.assign(UserRepository, { findById: originals.userFind }); Object.assign(AuthSessionRepository, { findByIdForUpdate: originals.sessionFind, revoke: originals.sessionRevoke, updateLastUsed: originals.touch }); Object.assign(AuthSessionRefreshTokenRepository, { findByHash: originals.tokenFind, consume: originals.consume, create: originals.create, revokeActiveForSession: originals.revokeTokens }) }
@@ -29,6 +31,7 @@ function setup({ consumed = null } = {}) {
 }
 
 test('refresh rotates hash and does not extend absolute expiration', async () => {
+  if (!authConfig.secret) authConfig.secret = 'test-only-session-signing-secret-not-for-production'
   const state = setup(); const expiry = state.session.expires_at.getTime()
   try {
     const result = await SessionLifecycleService.refresh('old-refresh', 'sid')
