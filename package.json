@@ -13,11 +13,15 @@
     "sequelize-cli": "^6.6.3"
   },
   "scripts": {
-    "test": "node --test --test-concurrency=1 \"tests/unit/**/*.test.js\" \"unit/configuration/*.test.js\" \"unit/persistence/*.test.js\" \"unit/stock/*.test.js\"",
+    "test": "node --test --test-concurrency=1 \"tests/unit/**/*.test.js\" \"tests/unit/service-orders/**/*.test.js\" \"unit/configuration/*.test.js\" \"unit/persistence/*.test.js\" \"unit/stock/*.test.js\"",
     "test:watch": "node --watch --test --test-concurrency=1 \"tests/unit/**/*.test.js\" \"unit/configuration/*.test.js\" \"unit/persistence/*.test.js\" \"unit/stock/*.test.js\"",
-    "test:integration": "node --test tests/integration/*.postgres.test.js tests/integration/stock/*.postgres.test.js",
+    "test:integration": "node --test tests/integration/*.postgres.test.js tests/integration/stock/*.postgres.test.js tests/integration/service-orders/*.integration.test.js",
+    "test:integration:service-orders:recovery": "docker run --rm --network feature004-recovery-20261113-network -v $PWD:/workspace -w /workspace -v $PWD/node_modules:/workspace/node_modules -e RUN_POSTGRES_SERVICE_ORDER_RECOVERY_INTEGRATION=1 -e DB_HOST=feature004-recovery-20261113-postgres -e DB_PORT=5432 -e DB_USERNAME=feature004_recovery_dev -e DB_PASSWORD=feature004_recovery_local_only -e DB_DATABASE=feature004_recovery_integration -e MONGODB_URI=mongodb://feature004-recovery-20261113-mongodb:27017/?replicaSet=feature004-recovery-rs -e MONGODB_DATABASE=feature004_recovery_integration -e RABBITMQ_URL=amqp://feature004_recovery_dev:feature004_recovery_local_only@feature004-recovery-20261113-rabbitmq:5672 -e SERVICE_ORDER_CURSOR_SECRET=feature004-recovery-integration-cursor-secret node:22.23.1-bookworm-slim node --test tests/integration/service-orders/*.integration.test.js",
+    "test:integration:service-orders": "node --test tests/integration/service-orders/*.integration.test.js",
     "inventory:outbox-worker": "node src/app/services/InventoryOutboxPublisher.js",
     "inventory:projection-consumer": "node src/app/services/InventoryProjectionConsumer.js",
+    "service-orders:outbox-worker": "node src/app/services/ServiceOrderOutboxPublisher.js",
+    "service-orders:projection-consumer": "node src/app/services/ServiceOrderProjectionConsumer.js",
     "dev": "nodemon",
     "debug": "nodemon --inspect",
     "start": "node -r sucrase/register src/server.js",

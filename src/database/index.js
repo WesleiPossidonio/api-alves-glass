@@ -31,6 +31,20 @@ import QrPublicRateLimit from '../app/models/QrPublicRateLimit.js'
 import MinioCleanupJob from '../app/models/MinioCleanupJob.js'
 import MinioUploadIntent from '../app/models/MinioUploadIntent.js'
 
+import ServiceOrder from '../app/models/ServiceOrder.js';
+import ServiceOrderProduct from '../app/models/ServiceOrderProduct.js';
+import ServiceOrderEvent from '../app/models/ServiceOrderEvent.js';
+import ServiceOrderOutbox from '../app/models/ServiceOrderOutbox.js';
+import ServiceOrderOperationGrant from '../app/models/ServiceOrderOperationGrant.js';
+import ServiceOrderGrantEvent from '../app/models/ServiceOrderGrantEvent.js';
+import ServiceOrderCounter from '../app/models/ServiceOrderCounter.js';
+import ServiceOrderPermission from '../app/models/ServiceOrderPermission.js';
+import ServiceOrderAssignment from '../app/models/ServiceOrderAssignment.js';
+import ServiceOrderQuality from '../app/models/ServiceOrderQuality.js';
+import ServiceOrderCycle from '../app/models/ServiceOrderCycle.js';
+import ServiceOrderProjectionCheckpoint from '../app/models/ServiceOrderProjectionCheckpoint.js';
+import ServiceOrderResponsibility from '../app/models/ServiceOrderResponsibility.js';
+
 const models = [
   Client,
   User,
@@ -61,6 +75,19 @@ const models = [
   QrPublicRateLimit,
   MinioCleanupJob,
   MinioUploadIntent,
+  ServiceOrder,
+  ServiceOrderProduct,
+  ServiceOrderEvent,
+  ServiceOrderOutbox,
+  ServiceOrderOperationGrant,
+  ServiceOrderGrantEvent,
+  ServiceOrderCounter,
+  ServiceOrderPermission,
+  ServiceOrderAssignment,
+  ServiceOrderQuality,
+  ServiceOrderCycle,
+  ServiceOrderProjectionCheckpoint,
+  ServiceOrderResponsibility,
 
 ]
 

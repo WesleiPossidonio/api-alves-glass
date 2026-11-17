@@ -1,0 +1,33 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: feature004-pr5-regression-postgres
+    environment:
+      POSTGRES_DB: feature004_pr5_regression
+      POSTGRES_USER: feature004_pr5_test
+      POSTGRES_PASSWORD: feature004_pr5_local_only
+    ports:
+      - '127.0.0.1:55446:5432'
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U feature004_pr5_test -d feature004_pr5_regression',
+        ]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: feature004-pr5-regression-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: feature004_pr5_test
+      RABBITMQ_DEFAULT_PASS: feature004_pr5_local_only
+      RABBITMQ_DEFAULT_VHOST: feature004_pr5_regression
+    ports:
+      - '127.0.0.1:5681:5672'
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
+      interval: 3s
+      timeout: 5s
+      retries: 30
