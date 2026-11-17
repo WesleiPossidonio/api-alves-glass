@@ -20,6 +20,8 @@ import { createAuthRateLimit } from './app/meddleawares/authRateLimit.js'
 import { requireAdmin, requireClient, requireUser } from './app/meddleawares/authorize.js'
 import { requireOwner } from './app/meddleawares/ownership.js'
 
+import ServiceOrderController from './app/controllers/ServiceOrderController.js';
+
 const routes = new Router();
 const userLoginRateLimit = createAuthRateLimit({ max: 5 })
 const clientLoginRateLimit = createAuthRateLimit({ max: 5 })
@@ -72,4 +74,99 @@ routes.get('/order/all', requireAdmin, OrderController.index);
 routes.get('/order/me', requireClient, OrderController.show);
 routes.patch('/order/:id', requireAdmin, OrderController.update);
 routes.patch('/orders/:id/products', requireAdmin, OrderProductsController.update);
+routes.post(
+  '/service-orders',
+  requireUser,
+  ServiceOrderController.create.bind(ServiceOrderController),
+);
+routes.get(
+  '/service-orders/client/me',
+  requireClient,
+  ServiceOrderController.clientOrders.bind(ServiceOrderController),
+);
+routes.get(
+  '/service-orders/:id',
+  requireUser,
+  ServiceOrderController.show.bind(ServiceOrderController),
+);
+routes.get(
+  '/sectors/:sectorId/service-orders/queue',
+  requireUser,
+  ServiceOrderController.queue.bind(ServiceOrderController),
+);
+routes.post(
+  '/service-orders/assume',
+  requireUser,
+  ServiceOrderController.assume.bind(ServiceOrderController),
+);
+routes.post(
+  '/service-orders/:id/responsibility/release',
+  requireUser,
+  ServiceOrderController.releaseResponsibility.bind(ServiceOrderController),
+);
+routes.post(
+  '/service-orders/:id/cancel',
+  requireUser,
+  ServiceOrderController.cancel.bind(ServiceOrderController),
+);
+routes.post(
+  '/service-orders/:id/priority',
+  requireUser,
+  ServiceOrderController.setPriority.bind(ServiceOrderController),
+);
+routes.patch(
+  '/service-orders/:id/products/:productId',
+  requireUser,
+  ServiceOrderController.correctProduct.bind(ServiceOrderController),
+);
+routes.post(
+  '/service-orders/:id/production/confirm-closure',
+  requireUser,
+  ServiceOrderController.closeProduction.bind(ServiceOrderController),
+);
+routes.post(
+  '/service-orders/:id/confirm-completion',
+  requireUser,
+  ServiceOrderController.complete.bind(ServiceOrderController),
+);
+routes.post(
+  '/service-orders/:id/status',
+  requireUser,
+  ServiceOrderController.transitionStatus.bind(ServiceOrderController),
+);
+routes.post(
+  '/service-orders/:id/quality',
+  requireUser,
+  ServiceOrderController.reportQuality.bind(ServiceOrderController),
+);
+routes.get(
+  '/sectors/:sectorId/service-order-quality/pending',
+  requireUser,
+  ServiceOrderController.pendingQuality.bind(ServiceOrderController),
+);
+routes.get(
+  '/sectors/:sectorId/service-order-quality/queue',
+  requireUser,
+  ServiceOrderController.qualityQueue.bind(ServiceOrderController),
+);
+routes.post(
+  '/service-order-quality/:qualityId/decision',
+  requireUser,
+  ServiceOrderController.decideQuality.bind(ServiceOrderController),
+);
+routes.post(
+  '/service-order-quality/:qualityId/inspections',
+  requireUser,
+  ServiceOrderController.inspectQuality.bind(ServiceOrderController),
+);
+routes.put(
+  '/service-order-permissions',
+  requireUser,
+  ServiceOrderController.configurePermission.bind(ServiceOrderController),
+);
+routes.delete(
+  '/service-order-permissions/:grantId',
+  requireAdmin,
+  ServiceOrderController.revokePermission.bind(ServiceOrderController),
+);
 export default routes;

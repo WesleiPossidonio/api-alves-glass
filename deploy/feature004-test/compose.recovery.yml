@@ -1,0 +1,77 @@
+name: feature004-recovery-20261113
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: feature004-recovery-20261113-postgres
+    environment:
+      POSTGRES_DB: feature004_recovery_integration
+      POSTGRES_USER: feature004_recovery_dev
+      POSTGRES_PASSWORD: feature004_recovery_local_only
+    ports:
+      - "127.0.0.1:55445:5432"
+    volumes:
+      - feature004_recovery_20261113_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+    restart: "no"
+    networks: [feature004-recovery]
+
+  mongodb:
+    image: mongo:8
+    container_name: feature004-recovery-20261113-mongodb
+    command:
+      [
+        "mongod",
+        "--replSet",
+        "feature004-recovery-rs",
+        "--bind_ip_all",
+        "--setParameter",
+        "disableLogicalSessionCacheRefresh=true",
+      ]
+    ports:
+      - "127.0.0.1:27030:27017"
+    volumes:
+      - feature004_recovery_20261113_mongodata:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand({ ping: 1 }).ok"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    restart: "no"
+    networks: [feature004-recovery]
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: feature004-recovery-20261113-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: feature004_recovery_dev
+      RABBITMQ_DEFAULT_PASS: feature004_recovery_local_only
+    ports:
+      - "127.0.0.1:5680:5672"
+      - "127.0.0.1:15680:15672"
+    volumes:
+      - feature004_recovery_20261113_rabbitdata:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    restart: "no"
+    networks: [feature004-recovery]
+
+networks:
+  feature004-recovery:
+    name: feature004-recovery-20261113-network
+    driver: bridge
+
+volumes:
+  feature004_recovery_20261113_pgdata:
+    name: feature004_recovery_20261113_pgdata
+  feature004_recovery_20261113_mongodata:
+    name: feature004_recovery_20261113_mongodata
+  feature004_recovery_20261113_rabbitdata:
+    name: feature004_recovery_20261113_rabbitdata

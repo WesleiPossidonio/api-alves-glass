@@ -1,0 +1,77 @@
+name: feature004-integration
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: feature004-integration-postgres
+    environment:
+      POSTGRES_DB: feature004_integration
+      POSTGRES_USER: feature004_test
+      POSTGRES_PASSWORD: feature004_disposable_only
+    ports:
+      - "127.0.0.1:55444:5432"
+    volumes:
+      - feature004_it_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+    restart: "no"
+    networks: [feature004-it]
+
+  mongodb:
+    image: mongo:8
+    container_name: feature004-integration-mongodb
+    command:
+      [
+        "mongod",
+        "--replSet",
+        "feature004-rs",
+        "--bind_ip_all",
+        "--setParameter",
+        "disableLogicalSessionCacheRefresh=true",
+      ]
+    ports:
+      - "127.0.0.1:27029:27017"
+    volumes:
+      - feature004_it_mongodata:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand({ ping: 1 }).ok"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    restart: "no"
+    networks: [feature004-it]
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: feature004-integration-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: feature004_test
+      RABBITMQ_DEFAULT_PASS: feature004_disposable_only
+    ports:
+      - "127.0.0.1:5679:5672"
+      - "127.0.0.1:15679:15672"
+    volumes:
+      - feature004_it_rabbitdata:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    restart: "no"
+    networks: [feature004-it]
+
+networks:
+  feature004-it:
+    name: feature004-integration-network
+    driver: bridge
+
+volumes:
+  feature004_it_pgdata:
+    name: feature004_it_pgdata
+  feature004_it_mongodata:
+    name: feature004_it_mongodata
+  feature004_it_rabbitdata:
+    name: feature004_it_rabbitdata
