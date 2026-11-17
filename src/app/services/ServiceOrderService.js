@@ -348,6 +348,7 @@ export class ServiceOrderService {
       } catch (error) {
         throw new ServiceOrderApplicationError(error.code, 409);
       }
+      const previousStatus = order.functional_status;
       await order.update({ functional_status: status }, { transaction });
       await this.events.append(
         {
@@ -355,7 +356,7 @@ export class ServiceOrderService {
           sectorId: order.sector_id,
           actorUserId: actor.id,
           eventType: 'ServiceOrderFunctionalStatusChanged',
-          payload: { previousStatus: order.functional_status, status },
+          payload: { previousStatus, status },
         },
         { transaction },
       );
@@ -529,10 +530,12 @@ export class ServiceOrderService {
       );
       if (pendingQuality)
         throw new ServiceOrderApplicationError('qualityInspectionPending', 409);
+      const productCompletedQuantity =
+        Number(product.completed_quantity) + quantity;
       await this.orders.applyProductProgress(
         product.id,
         {
-          completedQuantity: Number(product.completed_quantity) + quantity,
+          completedQuantity: productCompletedQuantity,
           blockedQuantity: Number(product.blocked_quantity),
         },
         { transaction },
@@ -551,7 +554,8 @@ export class ServiceOrderService {
           payload: {
             assignmentId,
             quantity,
-            completedQuantity: nextExecuted,
+            assignmentExecutedQuantity: nextExecuted,
+            completedQuantity: productCompletedQuantity,
             ...(reworkAction ? { qualityId: reworkAction.id } : {}),
           },
         },

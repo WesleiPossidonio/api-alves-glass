@@ -78,7 +78,21 @@ async function assertRepairState(qi, tx) {
       'SELECT column_name FROM information_schema.columns WHERE table_schema=current_schema() AND table_name=:table ORDER BY ordinal_position',
       { replacements: { table }, transaction: tx },
     );
-    if (actual.map((row) => row.column_name).join('|') !== expected.join('|'))
+    const inline = expected.filter(
+      (column) =>
+        !['notes', 'rework_executor_id', 'inspection_history'].includes(column),
+    );
+    if (table === 'service_orders')
+      inline.splice(inline.indexOf('public_status'), 0, 'notes');
+    if (table === 'service_order_qualities')
+      inline.splice(
+        inline.indexOf('issue'),
+        0,
+        'rework_executor_id',
+        'inspection_history',
+      );
+    const names = actual.map((row) => row.column_name).join('|');
+    if (names !== expected.join('|') && names !== inline.join('|'))
       throw new Error(`Repair baseline columns mismatch: ${table}`);
   }
 
@@ -142,22 +156,58 @@ async function assertRepairState(qi, tx) {
 
   const functionRow = await queryRows(
     qi,
-    "SELECT proname FROM pg_proc WHERE proname='set_service_order_grant_event_hash'",
+    `SELECT p.prosrc, p.prorettype = 'trigger'::regtype AS returns_trigger,
+       p.pronargs, p.prosecdef, p.provolatile, l.lanname
+     FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+     JOIN pg_language l ON l.oid=p.prolang
+     WHERE n.nspname=current_schema() AND p.proname='set_service_order_grant_event_hash'`,
     { transaction: tx },
   );
   const trigger = await queryRows(
     qi,
-    "SELECT tgname FROM pg_trigger WHERE tgrelid='service_order_grant_events'::regclass AND tgname='service_order_grant_event_hash_before_insert'",
+    `SELECT pg_get_triggerdef(t.oid) AS definition, t.tgenabled,
+       t.tgfoid = to_regprocedure('set_service_order_grant_event_hash()') AS function_matches
+     FROM pg_trigger t WHERE t.tgrelid='service_order_grant_events'::regclass
+       AND t.tgname='service_order_grant_event_hash_before_insert'`,
     { transaction: tx },
   );
-  if (functionRow.length || trigger.length)
-    throw new Error('Repair hash function/trigger already exists');
+  if (!functionRow.length && !trigger.length) return false;
+  const expectedBody = `DECLARE prior_hash VARCHAR(64);
+    BEGIN
+      PERFORM pg_advisory_xact_lock(hashtextextended(NEW.grant_id::text,0));
+      SELECT audit_hash INTO prior_hash FROM service_order_grant_events
+      WHERE grant_id=NEW.grant_id ORDER BY occurred_at DESC,id DESC LIMIT 1;
+      NEW.audit_previous_hash:=COALESCE(prior_hash,repeat('0',64));
+      IF NEW.audit_hash<>repeat('0',64) THEN RAISE EXCEPTION 'grant event hash is database-generated'; END IF;
+      NEW.audit_hash:=encode(digest(NEW.id::text||':'||NEW.grant_id::text||':'||NEW.actor_user_id::text||':'||NEW.target_user_id::text||':'||NEW.sector_id::text||':'||NEW.operation||':'||NEW.action||':'||NEW.reason||':'||NEW.occurred_at::text||':'||NEW.audit_previous_hash,'sha256'),'hex');
+      RETURN NEW;
+    END;`;
+  const normalize = (sql) => sql.replace(/\s+/g, ' ').trim();
+  const fn = functionRow[0];
+  if (
+    functionRow.length !== 1 ||
+    trigger.length !== 1 ||
+    !fn.returns_trigger ||
+    fn.pronargs !== 0 ||
+    fn.prosecdef ||
+    fn.provolatile !== 'v' ||
+    fn.lanname !== 'plpgsql' ||
+    normalize(fn.prosrc) !== normalize(expectedBody) ||
+    trigger[0].tgenabled !== 'O' ||
+    !trigger[0].function_matches ||
+    trigger[0].definition !==
+      'CREATE TRIGGER service_order_grant_event_hash_before_insert BEFORE INSERT ON public.service_order_grant_events FOR EACH ROW EXECUTE FUNCTION set_service_order_grant_event_hash()'
+  )
+    throw new Error(
+      'Repair hash function/trigger state is partial or divergent',
+    );
+  return true;
 }
 
 module.exports = {
   async up(qi) {
     return qi.sequelize.transaction(async (tx) => {
-      await assertRepairState(qi, tx);
+      if (await assertRepairState(qi, tx)) return;
       await qi.sequelize.query(
         `CREATE EXTENSION IF NOT EXISTS pgcrypto;
          CREATE OR REPLACE FUNCTION set_service_order_grant_event_hash()

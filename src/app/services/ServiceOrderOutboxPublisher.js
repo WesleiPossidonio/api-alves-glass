@@ -4,7 +4,13 @@ import { randomUUID } from 'node:crypto';
 import { createCqrsConnections } from '../../config/cqrs.js';
 import { Op } from 'sequelize';
 
-export const SERVICE_ORDER_EXCHANGE = 'service-orders.events.v1';
+import {
+  SERVICE_ORDER_EXCHANGE,
+  ensureServiceOrderTopology,
+  publishServiceOrderConfirmed,
+} from './serviceOrderMessagingTopology.js';
+
+export { SERVICE_ORDER_EXCHANGE };
 
 export class ServiceOrderOutboxPublisher {
   constructor({
@@ -84,19 +90,17 @@ export class ServiceOrderOutboxPublisher {
     try {
       for (const row of rows) {
         try {
-          await new Promise((resolve, reject) => {
-            channel.publish(
-              SERVICE_ORDER_EXCHANGE,
-              row.event_type,
-              Buffer.from(JSON.stringify(row.payload)),
-              {
-                persistent: true,
-                contentType: 'application/json',
-                messageId: row.event_id,
-              },
-              (error) => (error ? reject(error) : resolve()),
-            );
-          });
+          await publishServiceOrderConfirmed(
+            channel,
+            SERVICE_ORDER_EXCHANGE,
+            row.event_type,
+            Buffer.from(JSON.stringify(row.payload)),
+            {
+              persistent: true,
+              contentType: 'application/json',
+              messageId: row.event_id,
+            },
+          );
           await this.markPublished(row.event_id);
           row.published = true;
           published += 1;
@@ -119,9 +123,12 @@ export class ServiceOrderOutboxPublisher {
   async openConfirmChannel() {
     const connection = await this.connections.getRabbitConnection();
     const channel = await connection.createConfirmChannel();
-    await channel.assertExchange(SERVICE_ORDER_EXCHANGE, 'topic', {
-      durable: true,
-    });
+    try {
+      await ensureServiceOrderTopology(channel);
+    } catch (error) {
+      await channel.close().catch(() => {});
+      throw error;
+    }
     return channel;
   }
 

@@ -438,6 +438,7 @@ export class ServiceOrderProjectionService {
             throw new Error(
               'Work cannot start before required administrative triage',
             );
+          // completedQuantity is the product total, not the assignment total.
           product.completedQuantity = payload.completedQuantity;
           product.assignedQuantity = Math.max(
             0,

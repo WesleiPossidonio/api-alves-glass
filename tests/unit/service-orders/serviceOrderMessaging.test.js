@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { EventEmitter } from 'node:events';
 import {
   SERVICE_ORDER_QUEUE,
   SERVICE_ORDER_PARKING_QUEUE,
@@ -24,12 +25,14 @@ test('outbox publisher waits for broker confirmation before marking an event pub
     payload: { eventId: 'event-1' },
     attempts: 1,
   };
-  const channel = {
+  const channel = Object.assign(new EventEmitter(), {
     assertExchange: async (...args) => calls.push(['exchange', ...args]),
+    assertQueue: async (...args) => calls.push(['queue', ...args]),
+    bindQueue: async (...args) => calls.push(['binding', ...args]),
     publish: (_exchange, _key, _body, _options, callback) =>
       setImmediate(() => callback(null)),
     close: async () => calls.push(['close']),
-  };
+  });
   const publisher = new ServiceOrderOutboxPublisher({
     database: {},
     connections: {
@@ -96,12 +99,13 @@ test('outbox publisher persists retry backoff and error after a claimed delivery
       attempts: 1,
     },
   ];
-  publisher.openConfirmChannel = async () => ({
-    assertExchange: async () => {},
-    publish: (_exchange, _key, _body, _options, callback) =>
-      setImmediate(() => callback(new Error('nack'))),
-    close: async () => {},
-  });
+  publisher.openConfirmChannel = async () =>
+    Object.assign(new EventEmitter(), {
+      assertExchange: async () => {},
+      publish: (_exchange, _key, _body, _options, callback) =>
+        setImmediate(() => callback(new Error('nack'))),
+      close: async () => {},
+    });
 
   assert.deepEqual(await publisher.publishBatch(), {
     claimed: 1,

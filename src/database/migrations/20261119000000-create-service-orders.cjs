@@ -31,7 +31,6 @@ module.exports = {
       client_id: uuidFk('client'),
       sector_id: uuidFk('sectors'),
       due_at: { type: Sequelize.DATE, allowNull: false },
-      notes: { type: Sequelize.STRING(4000), allowNull: true },
       public_status: { type: Sequelize.STRING(32), allowNull: false },
       administrative_state: {
         type: Sequelize.STRING(16),
@@ -52,6 +51,7 @@ module.exports = {
       created_by: uuidFk('users'),
       created_at: now,
       updated_at: now,
+      notes: { type: Sequelize.STRING(4000), allowNull: true },
     });
     await queryInterface.sequelize.query(`
       ALTER TABLE service_orders
@@ -256,19 +256,10 @@ module.exports = {
       granted_by: uuidFk('users'),
       created_at: now,
       reason: { type: Sequelize.STRING(500), allowNull: false },
-      revoked_at: { type: Sequelize.DATE, allowNull: true },
-      revoked_by: {
-        type: Sequelize.UUID,
-        allowNull: true,
-        references: { model: 'users', key: 'id' },
-        onUpdate: 'RESTRICT',
-        onDelete: 'RESTRICT',
-      },
-      revoked_reason: { type: Sequelize.STRING(500), allowNull: true },
     });
     await queryInterface.sequelize.query(`
       CREATE INDEX service_order_grants_lookup_idx ON service_order_operation_grants (user_id, sector_id, operation);
-      CREATE UNIQUE INDEX service_order_grants_ever_uq ON service_order_operation_grants (user_id, sector_id, operation) WHERE revoked_at IS NULL;
+      CREATE UNIQUE INDEX service_order_grants_ever_uq ON service_order_operation_grants (user_id, sector_id, operation);
       CREATE FUNCTION reject_service_order_grant_mutation() RETURNS trigger AS $$
       BEGIN RAISE EXCEPTION 'service order grants are immutable; revoke and re-grant with audit events' USING ERRCODE = '55000'; END;
       $$ LANGUAGE plpgsql;
@@ -294,8 +285,6 @@ module.exports = {
       action: { type: Sequelize.STRING(8), allowNull: false },
       reason: { type: Sequelize.STRING(500), allowNull: false },
       occurred_at: now,
-      audit_hash: { type: Sequelize.STRING(64), allowNull: false },
-      audit_previous_hash: { type: Sequelize.STRING(64), allowNull: false },
     });
     await queryInterface.sequelize.query(`
       CREATE FUNCTION reject_service_order_grant_event_mutation() RETURNS trigger AS $$
@@ -331,18 +320,6 @@ module.exports = {
         onUpdate: 'RESTRICT',
         onDelete: 'RESTRICT',
       },
-      rework_executor_id: {
-        type: Sequelize.UUID,
-        allowNull: true,
-        references: { model: 'users', key: 'id' },
-        onUpdate: 'RESTRICT',
-        onDelete: 'RESTRICT',
-      },
-      inspection_history: {
-        type: Sequelize.JSONB,
-        allowNull: false,
-        defaultValue: [],
-      },
       issue: { type: Sequelize.STRING(2000), allowNull: false },
       disposition: { type: Sequelize.STRING(24), allowNull: true },
       affected_quantity: { type: Sequelize.INTEGER, allowNull: false },
@@ -362,6 +339,19 @@ module.exports = {
         defaultValue: 'OPEN',
       },
       created_at: now,
+      // Keep the same physical extension order as the historical recovery schema.
+      rework_executor_id: {
+        type: Sequelize.UUID,
+        allowNull: true,
+        references: { model: 'users', key: 'id' },
+        onUpdate: 'RESTRICT',
+        onDelete: 'RESTRICT',
+      },
+      inspection_history: {
+        type: Sequelize.JSONB,
+        allowNull: false,
+        defaultValue: [],
+      },
     });
     await queryInterface.createTable('service_order_cycles', {
       id: { type: Sequelize.UUID, primaryKey: true, allowNull: false },
@@ -411,7 +401,6 @@ module.exports = {
       CREATE INDEX service_order_qualities_open_idx ON service_order_qualities (service_order_id, product_id) WHERE status IN ('OPEN','REWORK');
     `);
     await queryInterface.sequelize.query(`
-      ALTER TABLE service_order_grant_events ADD CONSTRAINT service_order_grant_events_action_ck CHECK (action IN ('GRANT','REVOKE'));
       CREATE UNIQUE INDEX service_order_permissions_active_uq ON service_order_permissions (user_id, sector_id, operation);
     `);
   },

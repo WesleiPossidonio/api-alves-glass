@@ -3,7 +3,12 @@ import ServiceOrderProjectionService, {
   SERVICE_ORDER_PROJECTION_COLLECTIONS,
 } from './ServiceOrderProjectionService.js';
 
-export const SERVICE_ORDER_QUEUE = 'service-orders.projection.v1';
+import {
+  SERVICE_ORDER_QUEUE,
+  ensureServiceOrderTopology,
+} from './serviceOrderMessagingTopology.js';
+
+export { SERVICE_ORDER_QUEUE };
 export const SERVICE_ORDER_PARKING_QUEUE =
   'service-orders.projection.parking.v1';
 const MAX_GAP_RETRIES = 8;
@@ -19,18 +24,12 @@ export class ServiceOrderProjectionConsumer {
   async start() {
     const connection = await this.connections.getRabbitConnection();
     const channel = await connection.createConfirmChannel();
-    await channel.assertExchange('service-orders.events.v1', 'topic', {
-      durable: true,
-    });
+    await ensureServiceOrderTopology(channel);
     await channel.assertExchange('service-orders.parking.v1', 'direct', {
       durable: true,
     });
     await channel.assertExchange('service-orders.retry.v1', 'direct', {
       durable: true,
-    });
-    await channel.assertQueue(SERVICE_ORDER_QUEUE, {
-      durable: true,
-      arguments: { 'x-queue-type': 'quorum' },
     });
     await channel.assertQueue(SERVICE_ORDER_PARKING_QUEUE, { durable: true });
     for (const delay of RETRY_DELAYS) {
@@ -45,11 +44,6 @@ export class ServiceOrderProjectionConsumer {
         },
       });
     }
-    await channel.bindQueue(
-      SERVICE_ORDER_QUEUE,
-      'service-orders.events.v1',
-      '#',
-    );
     await channel.bindQueue(
       SERVICE_ORDER_QUEUE,
       'service-orders.retry.v1',

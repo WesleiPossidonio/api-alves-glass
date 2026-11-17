@@ -84,9 +84,19 @@ async function assertBaseline(queryInterface, transaction) {
     const allowed = expected.concat(
       partial.filter((column) => actual.includes(column)),
     );
+    // 190 creates these columns inline; the historical recovery appended them.
+    const inline = [...expected];
+    if (table === 'service_orders' && actual.includes('notes'))
+      inline.splice(inline.indexOf('public_status'), 0, 'notes');
+    if (table === 'service_order_qualities')
+      inline.splice(
+        inline.indexOf('issue'),
+        0,
+        ...partial.filter((column) => actual.includes(column)),
+      );
     if (
-      actual.length !== allowed.length ||
-      allowed.some((column, index) => actual[index] !== column)
+      actual.join('|') !== allowed.join('|') &&
+      actual.join('|') !== inline.join('|')
     )
       throw new Error(
         `Refusing Feature 004 extension: unexpected ${table} columns`,
