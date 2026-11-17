@@ -7,11 +7,11 @@ networks ou volumes de `docker-compose.yml`, `docker-compose.persistence.yml` ou
 
 ## Recursos propostos
 
-| Serviço | Container | Porta host → container | Banco/recurso | Volume |
-| --- | --- | --- | --- | --- |
-| PostgreSQL 17 | `feature004-integration-postgres` | `127.0.0.1:55444 → 5432` | `feature004_integration`, usuário `feature004_test` | `feature004_it_pgdata` |
-| MongoDB 8 replica set | `feature004-integration-mongodb` | `127.0.0.1:27029 → 27017` | `feature004_integration`, replica set `feature004-rs` | `feature004_it_mongodata` |
-| RabbitMQ 4 Management | `feature004-integration-rabbitmq` | `127.0.0.1:5679 → 5672`, UI `127.0.0.1:15679 → 15672` | vhost `/` | `feature004_it_rabbitdata` |
+| Serviço               | Container                         | Porta host → container                                | Banco/recurso                                         | Volume                     |
+| --------------------- | --------------------------------- | ----------------------------------------------------- | ----------------------------------------------------- | -------------------------- |
+| PostgreSQL 17         | `feature004-integration-postgres` | `127.0.0.1:55444 → 5432`                              | `feature004_integration`, usuário `feature004_test`   | `feature004_it_pgdata`     |
+| MongoDB 8 replica set | `feature004-integration-mongodb`  | `127.0.0.1:27029 → 27017`                             | `feature004_integration`, replica set `feature004-rs` | `feature004_it_mongodata`  |
+| RabbitMQ 4 Management | `feature004-integration-rabbitmq` | `127.0.0.1:5679 → 5672`, UI `127.0.0.1:15679 → 15672` | vhost `/`                                             | `feature004_it_rabbitdata` |
 
 Rede dedicada: `feature004-integration-network` (bridge). Os ports de host são
 exclusivos e ligados a loopback.
