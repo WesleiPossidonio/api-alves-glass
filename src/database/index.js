@@ -6,6 +6,11 @@ import User from '../app/models/User.js'
 import Order from '../app/models/Order.js'
 import OrdersProducts from '../app/models/OrdersProducts.js'
 import Budget from '../app/models/Budget.js'
+import BudgetPdf from '../app/models/BudgetPdf.js'
+import BudgetPdfObject from '../app/models/BudgetPdfObject.js'
+import BudgetCommercialManager from '../app/models/BudgetCommercialManager.js'
+import BudgetCommercialPermission from '../app/models/BudgetCommercialPermission.js'
+import BudgetCommercialPermissionAudit from '../app/models/BudgetCommercialPermissionAudit.js'
 import OrderAddress from '../app/models/OrderAddress.js'
 import Category from '../app/models/Category.js'
 import ProductCategory from '../app/models/ProductCategory.js'
@@ -51,6 +56,11 @@ const models = [
   Order,
   OrdersProducts,
   Budget,
+  BudgetPdf,
+  BudgetPdfObject,
+  BudgetCommercialManager,
+  BudgetCommercialPermission,
+  BudgetCommercialPermissionAudit,
   OrderAddress,
   Category,
   ProductCategory,
