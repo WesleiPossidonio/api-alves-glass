@@ -55,7 +55,7 @@ test('T006 isola api-dev e api-test em networks PostgreSQL distintas com uma ún
   const apiDev = compose.split('  api-dev:\n', 2)[1].split('  api-test:\n', 2)[0]
   const apiTest = compose.split('  api-test:\n', 2)[1].split('  postgres-rebuild:\n', 2)[0]
 
-  assert.match(dockerfile, /^FROM node:22-alpine$/m)
+  assert.match(dockerfile, /^FROM node:22-alpine@sha256:[a-f0-9]{64}$/m)
   assert.match(dockerfile, /^RUN yarn install --frozen-lockfile$/m)
   assert.match(dockerfile, /^CMD \["yarn", "dev"\]$/m)
   assert.match(compose, /x-api-image: &api-image\n  image: alves-glass-api:development\n  build:\n    context: \.\n    dockerfile: docker\/dockerfile/)

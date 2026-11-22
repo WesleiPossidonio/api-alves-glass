@@ -1,0 +1,172 @@
+{
+  "schemaVersion": 1,
+  "imageId": "sha256:13283398dc708aaa5fb33e93ee89f463422444ef70b993ac27ff86b5462b209a",
+  "version": "qpdf version 12.3.2\nRun qpdf --copyright to see copyright and license information.",
+  "uid": 0,
+  "fixtures": [
+    {
+      "file": "plain.pdf",
+      "sizeBytes": 381,
+      "sha256": "0b4dd29e99c8f9ed6a7adb87f86db581378a2cdfe639fee1b350df10941195ad",
+      "check": {
+        "exit": 0,
+        "stdout": "checking /app/tests/fixtures/budgets/plain.pdf\nPDF Version: 1.4\nFile is not encrypted\nFile is not linearized\nNo syntax or stream encoding errors found; the file may still contain\nerrors that qpdf cannot detect\n",
+        "stderr": ""
+      },
+      "requiresPassword": {
+        "exit": 2,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    {
+      "file": "password-required.pdf",
+      "sizeBytes": 698,
+      "sha256": "e8b5c398adcde5aa93cf712873945c8e96bbd65cd33fdccaef9f275675cf16fc",
+      "check": {
+        "exit": 2,
+        "stdout": "",
+        "stderr": "qpdf: /app/tests/fixtures/budgets/password-required.pdf: invalid password\n"
+      },
+      "requiresPassword": {
+        "exit": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    {
+      "file": "empty-password.pdf",
+      "sizeBytes": 698,
+      "sha256": "480a5432ada099258a4a59df758d8bd73afda2f7d02716acbce8d7195e40bd6e",
+      "check": {
+        "exit": 0,
+        "stdout": "checking /app/tests/fixtures/budgets/empty-password.pdf\nPDF Version: 1.4\nR = 2\nP = -4\nUser password = \nSupplied password is user password\nextract for accessibility: allowed\nextract for any purpose: allowed\nprint low resolution: allowed\nprint high resolution: allowed\nmodify document assembly: allowed\nmodify forms: allowed\nmodify annotations: allowed\nmodify other: allowed\nmodify anything: allowed\nFile is not linearized\nNo syntax or stream encoding errors found; the file may still contain\nerrors that qpdf cannot detect\n",
+        "stderr": ""
+      },
+      "requiresPassword": {
+        "exit": 3,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    {
+      "file": "warning-xref.pdf",
+      "sizeBytes": 379,
+      "sha256": "ec9f8d76b7dc16b80afe405ad4345952943ae80a1af178462f93772b12e0b4dc",
+      "check": {
+        "exit": 3,
+        "stdout": "checking /app/tests/fixtures/budgets/warning-xref.pdf\nPDF Version: 1.4\nFile is not encrypted\nFile is not linearized\n",
+        "stderr": "WARNING: /app/tests/fixtures/budgets/warning-xref.pdf: file is damaged\nWARNING: /app/tests/fixtures/budgets/warning-xref.pdf: can't find startxref\nWARNING: /app/tests/fixtures/budgets/warning-xref.pdf: Attempting to reconstruct cross-reference table\nqpdf: operation succeeded with warnings\n"
+      },
+      "requiresPassword": {
+        "exit": 2,
+        "stdout": "",
+        "stderr": "WARNING: /app/tests/fixtures/budgets/warning-xref.pdf: file is damaged\nWARNING: /app/tests/fixtures/budgets/warning-xref.pdf: can't find startxref\nWARNING: /app/tests/fixtures/budgets/warning-xref.pdf: Attempting to reconstruct cross-reference table\n"
+      }
+    },
+    {
+      "file": "corrupt.pdf",
+      "sizeBytes": 43,
+      "sha256": "b206fb193ec0ebb588d4e18f5e39ba6bf26974eb7e0a2cf3071d8bd3eff5489d",
+      "check": {
+        "exit": 2,
+        "stdout": "",
+        "stderr": "WARNING: /app/tests/fixtures/budgets/corrupt.pdf: file is damaged\nWARNING: /app/tests/fixtures/budgets/corrupt.pdf: can't find startxref\nWARNING: /app/tests/fixtures/budgets/corrupt.pdf: Attempting to reconstruct cross-reference table\nqpdf: /app/tests/fixtures/budgets/corrupt.pdf: unable to find trailer dictionary while recovering damaged file\n"
+      },
+      "requiresPassword": {
+        "exit": 2,
+        "stdout": "",
+        "stderr": "WARNING: /app/tests/fixtures/budgets/corrupt.pdf: file is damaged\nWARNING: /app/tests/fixtures/budgets/corrupt.pdf: can't find startxref\nWARNING: /app/tests/fixtures/budgets/corrupt.pdf: Attempting to reconstruct cross-reference table\nqpdf: /app/tests/fixtures/budgets/corrupt.pdf: unable to find trailer dictionary while recovering damaged file\n"
+      }
+    },
+    {
+      "file": "truncated.pdf",
+      "sizeBytes": 70,
+      "sha256": "b4551e05dfca990c20f44514a4d87d2df3eb1221f97f0c1bf64787c62702ca89",
+      "check": {
+        "exit": 2,
+        "stdout": "",
+        "stderr": "WARNING: /app/tests/fixtures/budgets/truncated.pdf: file is damaged\nWARNING: /app/tests/fixtures/budgets/truncated.pdf: can't find startxref\nWARNING: /app/tests/fixtures/budgets/truncated.pdf: Attempting to reconstruct cross-reference table\nWARNING: /app/tests/fixtures/budgets/truncated.pdf (object 1 0, offset 70): parse error while reading object\nWARNING: /app/tests/fixtures/budgets/truncated.pdf (object 1 0, offset 70): unexpected EOF\nqpdf: /app/tests/fixtures/budgets/truncated.pdf: unable to find trailer dictionary while recovering damaged file\n"
+      },
+      "requiresPassword": {
+        "exit": 2,
+        "stdout": "",
+        "stderr": "WARNING: /app/tests/fixtures/budgets/truncated.pdf: file is damaged\nWARNING: /app/tests/fixtures/budgets/truncated.pdf: can't find startxref\nWARNING: /app/tests/fixtures/budgets/truncated.pdf: Attempting to reconstruct cross-reference table\nWARNING: /app/tests/fixtures/budgets/truncated.pdf (object 1 0, offset 70): parse error while reading object\nWARNING: /app/tests/fixtures/budgets/truncated.pdf (object 1 0, offset 70): unexpected EOF\nqpdf: /app/tests/fixtures/budgets/truncated.pdf: unable to find trailer dictionary while recovering damaged file\n"
+      }
+    },
+    {
+      "file": "renamed-non-pdf.pdf",
+      "sizeBytes": 35,
+      "sha256": "b17604d3a91aef8e94ac2e538deda93eb7cfecb11f514b263b43ba07d95e8a28",
+      "check": {
+        "exit": 2,
+        "stdout": "",
+        "stderr": "WARNING: /app/tests/fixtures/budgets/renamed-non-pdf.pdf: can't find PDF header\nWARNING: /app/tests/fixtures/budgets/renamed-non-pdf.pdf: file is damaged\nWARNING: /app/tests/fixtures/budgets/renamed-non-pdf.pdf: can't find startxref\nWARNING: /app/tests/fixtures/budgets/renamed-non-pdf.pdf: Attempting to reconstruct cross-reference table\nqpdf: /app/tests/fixtures/budgets/renamed-non-pdf.pdf: unable to find trailer dictionary while recovering damaged file\n"
+      },
+      "requiresPassword": {
+        "exit": 2,
+        "stdout": "",
+        "stderr": "WARNING: /app/tests/fixtures/budgets/renamed-non-pdf.pdf: can't find PDF header\nWARNING: /app/tests/fixtures/budgets/renamed-non-pdf.pdf: file is damaged\nWARNING: /app/tests/fixtures/budgets/renamed-non-pdf.pdf: can't find startxref\nWARNING: /app/tests/fixtures/budgets/renamed-non-pdf.pdf: Attempting to reconstruct cross-reference table\nqpdf: /app/tests/fixtures/budgets/renamed-non-pdf.pdf: unable to find trailer dictionary while recovering damaged file\n"
+      }
+    },
+    {
+      "file": "empty.pdf",
+      "sizeBytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "check": {
+        "exit": 2,
+        "stdout": "",
+        "stderr": "WARNING: /app/tests/fixtures/budgets/empty.pdf: can't find PDF header\nWARNING: /app/tests/fixtures/budgets/empty.pdf: file is damaged\nWARNING: /app/tests/fixtures/budgets/empty.pdf: can't find startxref\nWARNING: /app/tests/fixtures/budgets/empty.pdf: Attempting to reconstruct cross-reference table\nqpdf: /app/tests/fixtures/budgets/empty.pdf: unable to find trailer dictionary while recovering damaged file\n"
+      },
+      "requiresPassword": {
+        "exit": 2,
+        "stdout": "",
+        "stderr": "WARNING: /app/tests/fixtures/budgets/empty.pdf: can't find PDF header\nWARNING: /app/tests/fixtures/budgets/empty.pdf: file is damaged\nWARNING: /app/tests/fixtures/budgets/empty.pdf: can't find startxref\nWARNING: /app/tests/fixtures/budgets/empty.pdf: Attempting to reconstruct cross-reference table\nqpdf: /app/tests/fixtures/budgets/empty.pdf: unable to find trailer dictionary while recovering damaged file\n"
+      }
+    }
+  ],
+  "boundaries": [
+    {
+      "sizeBytes": 10485759,
+      "sha256": "b8f4a7d81a570a85178751d4dfaa0e6b3d61db2422e114349a537739cca493f8",
+      "check": {
+        "exit": 0,
+        "stdout": "checking /tmp/feature005-qpdf-AnLdOl/boundary.pdf\nPDF Version: 1.4\nFile is not encrypted\nFile is not linearized\nNo syntax or stream encoding errors found; the file may still contain\nerrors that qpdf cannot detect\n",
+        "stderr": ""
+      },
+      "requiresPassword": {
+        "exit": 2,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    {
+      "sizeBytes": 10485760,
+      "sha256": "b2e80000dcb1a978c591cd7f418d31c7649f015f8855253698ad7d15433fdf3c",
+      "check": {
+        "exit": 0,
+        "stdout": "checking /tmp/feature005-qpdf-AnLdOl/boundary.pdf\nPDF Version: 1.4\nFile is not encrypted\nFile is not linearized\nNo syntax or stream encoding errors found; the file may still contain\nerrors that qpdf cannot detect\n",
+        "stderr": ""
+      },
+      "requiresPassword": {
+        "exit": 2,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    {
+      "sizeBytes": 10485761,
+      "sha256": "45f1c947c287d07d400f090b52d7869d3381a3d8bd77dd25dba6c8bfe2a4e65f",
+      "check": {
+        "exit": 0,
+        "stdout": "checking /tmp/feature005-qpdf-AnLdOl/boundary.pdf\nPDF Version: 1.4\nFile is not encrypted\nFile is not linearized\nNo syntax or stream encoding errors found; the file may still contain\nerrors that qpdf cannot detect\n",
+        "stderr": ""
+      },
+      "requiresPassword": {
+        "exit": 2,
+        "stdout": "",
+        "stderr": ""
+      }
+    }
+  ]
+}

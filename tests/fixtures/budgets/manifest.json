@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "provenance": "Locally generated synthetic blank PDFs; no third-party or client documents.",
+  "qpdfVerification": {
+    "status": "verified",
+    "version": "qpdf version 12.3.2",
+    "imageId": "sha256:13283398dc708aaa5fb33e93ee89f463422444ef70b993ac27ff86b5462b209a",
+    "effectiveUid": 0,
+    "evidence": "qpdf-observed.json"
+  },
+  "fixtures": [
+    {
+      "file": "plain.pdf",
+      "sizeBytes": 381,
+      "sha256": "0b4dd29e99c8f9ed6a7adb87f86db581378a2cdfe639fee1b350df10941195ad",
+      "expectedRequiresPasswordExit": 2,
+      "expectedCheckExit": 0,
+      "expectedUploadResult": "accept",
+      "observedRequiresPasswordExit": 2,
+      "observedCheckExit": 0,
+      "note": "Never accept observed exits by rewriting expectations automatically; review unexpected results."
+    },
+    {
+      "file": "password-required.pdf",
+      "sizeBytes": 698,
+      "sha256": "e8b5c398adcde5aa93cf712873945c8e96bbd65cd33fdccaef9f275675cf16fc",
+      "expectedRequiresPasswordExit": 0,
+      "expectedCheckExit": 2,
+      "expectedUploadResult": "passwordRequired",
+      "observedRequiresPasswordExit": 0,
+      "observedCheckExit": 2,
+      "note": "Never accept observed exits by rewriting expectations automatically; review unexpected results."
+    },
+    {
+      "file": "empty-password.pdf",
+      "sizeBytes": 698,
+      "sha256": "480a5432ada099258a4a59df758d8bd73afda2f7d02716acbce8d7195e40bd6e",
+      "expectedRequiresPasswordExit": 3,
+      "expectedCheckExit": 0,
+      "expectedUploadResult": "accept",
+      "observedRequiresPasswordExit": 3,
+      "observedCheckExit": 0,
+      "note": "Never accept observed exits by rewriting expectations automatically; review unexpected results."
+    },
+    {
+      "file": "warning-xref.pdf",
+      "sizeBytes": 379,
+      "sha256": "ec9f8d76b7dc16b80afe405ad4345952943ae80a1af178462f93772b12e0b4dc",
+      "expectedRequiresPasswordExit": 2,
+      "expectedCheckExit": 3,
+      "expectedUploadResult": "invalidPdf",
+      "observedRequiresPasswordExit": 2,
+      "observedCheckExit": 3,
+      "note": "Never accept observed exits by rewriting expectations automatically; review unexpected results."
+    },
+    {
+      "file": "corrupt.pdf",
+      "sizeBytes": 43,
+      "sha256": "b206fb193ec0ebb588d4e18f5e39ba6bf26974eb7e0a2cf3071d8bd3eff5489d",
+      "expectedRequiresPasswordExit": 2,
+      "expectedCheckExit": 2,
+      "expectedUploadResult": "invalidPdf",
+      "observedRequiresPasswordExit": 2,
+      "observedCheckExit": 2,
+      "note": "Never accept observed exits by rewriting expectations automatically; review unexpected results."
+    },
+    {
+      "file": "truncated.pdf",
+      "sizeBytes": 70,
+      "sha256": "b4551e05dfca990c20f44514a4d87d2df3eb1221f97f0c1bf64787c62702ca89",
+      "expectedRequiresPasswordExit": 2,
+      "expectedCheckExit": 2,
+      "expectedUploadResult": "invalidPdf",
+      "observedRequiresPasswordExit": 2,
+      "observedCheckExit": 2,
+      "note": "Never accept observed exits by rewriting expectations automatically; review unexpected results."
+    },
+    {
+      "file": "renamed-non-pdf.pdf",
+      "sizeBytes": 35,
+      "sha256": "b17604d3a91aef8e94ac2e538deda93eb7cfecb11f514b263b43ba07d95e8a28",
+      "expectedRequiresPasswordExit": 2,
+      "expectedCheckExit": 2,
+      "expectedUploadResult": "unsupportedMediaType",
+      "observedRequiresPasswordExit": 2,
+      "observedCheckExit": 2,
+      "note": "Never accept observed exits by rewriting expectations automatically; review unexpected results."
+    },
+    {
+      "file": "empty.pdf",
+      "sizeBytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "expectedRequiresPasswordExit": 2,
+      "expectedCheckExit": 2,
+      "expectedUploadResult": "invalidPdf",
+      "observedRequiresPasswordExit": 2,
+      "observedCheckExit": 2,
+      "note": "Never accept observed exits by rewriting expectations automatically; review unexpected results."
+    }
+  ],
+  "boundaries": [
+    {
+      "recipe": "buildPdf({ size: sizeBytes })",
+      "sizeBytes": 10485759,
+      "expectedSizeAllowed": true,
+      "expectedRequiresPasswordExit": 2,
+      "expectedCheckExit": 0,
+      "observedCheckExit": 0,
+      "observedRequiresPasswordExit": 2
+    },
+    {
+      "recipe": "buildPdf({ size: sizeBytes })",
+      "sizeBytes": 10485760,
+      "expectedSizeAllowed": true,
+      "expectedRequiresPasswordExit": 2,
+      "expectedCheckExit": 0,
+      "observedCheckExit": 0,
+      "observedRequiresPasswordExit": 2
+    },
+    {
+      "recipe": "buildPdf({ size: sizeBytes })",
+      "sizeBytes": 10485761,
+      "expectedSizeAllowed": false,
+      "expectedRequiresPasswordExit": 2,
+      "expectedCheckExit": 0,
+      "observedCheckExit": 0,
+      "observedRequiresPasswordExit": 2
+    }
+  ]
+}
