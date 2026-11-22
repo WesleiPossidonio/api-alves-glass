@@ -1,12 +1,11 @@
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import test from 'node:test'
-import minioClient from '../../../src/config/minio.js'
+import { createMinioClient } from '../../../src/config/minio.js'
 import { MaterialImageServiceClient } from '../../../src/app/services/MaterialImageService.js'
 import { StorageServiceClient } from '../../../src/app/services/StorageService.js'
 
 const enabled = process.env.FEATURE003_MINIO_INTEGRATION === '1'
-const storage = new StorageServiceClient()
 const types = [
   ['image/jpeg', Buffer.from([0xff, 0xd8, 0xff, 0x00])],
   ['image/png', Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0])],
@@ -20,6 +19,8 @@ test('Feature 003 media integration against explicitly authorized isolated MinIO
   const publicBucket = process.env.MINIO_PUBLIC_BUCKET
   const privateBucket = process.env.MINIO_PRIVATE_BUCKET
   assert.ok(publicBucket && privateBucket && publicBucket !== privateBucket)
+  const minioClient = createMinioClient(process.env)
+  const storage = new StorageServiceClient({ client: minioClient })
   for (const bucket of [publicBucket, privateBucket]) assert.equal(await minioClient.bucketExists(bucket), true)
 
   const prefix = `materials/feature003-test-${randomUUID()}`

@@ -23,3 +23,9 @@ node_modules
 package-lock.json
 *.lock
 !yarn.lock
+
+# Saídas operacionais locais; relatórios Markdown e scripts continuam versionáveis.
+*.log
+*.exit
+*.tmp
+/.specify/.cache/

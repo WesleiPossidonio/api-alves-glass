@@ -20,6 +20,7 @@ import { createAuthRateLimit } from './app/meddleawares/authRateLimit.js'
 import { requireAdmin, requireClient, requireUser } from './app/meddleawares/authorize.js'
 import { requireOwner } from './app/meddleawares/ownership.js'
 
+import { createBudgetPdfRouter, createClientBudgetPdfRouter, createBudgetPermissionRouter } from './app/meddleawares/budgetPdfHttp.js';
 import ServiceOrderController from './app/controllers/ServiceOrderController.js';
 
 const routes = new Router();
@@ -40,6 +41,9 @@ routes.get('/stock/qr/:token', QrStockController.publicResolve.bind(QrStockContr
 routes.get('/stock/qr/:token/withdrawal', QrStockController.resolve.bind(QrStockController))
 routes.get('/stock/material-code/:code/withdrawal', QrStockController.manualResolveByCode.bind(QrStockController))
 routes.post('/stock/withdrawals', QrStockController.withdraw.bind(QrStockController))
+routes.use('/client/budgets', createClientBudgetPdfRouter());
+routes.use('/budgets', createBudgetPdfRouter());
+routes.use('/sectors', createBudgetPermissionRouter());
 routes.use(authMiddlewares);
 routes.get('/check-auth', (request, response) => response.json({ authenticated: true, userId: request.userId, role: request.userRole, actorType: request.actorType }));
 routes.get('/sectors', SectorController.index.bind(SectorController))

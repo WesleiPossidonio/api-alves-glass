@@ -9,6 +9,7 @@ import Projection, {
   SERVICE_ORDER_PROJECTION_COLLECTIONS as collections,
 } from '../../../src/app/services/ServiceOrderProjectionService.js';
 import { createCqrsConnections } from '../../../src/config/cqrs.js';
+import { createRecoveryIdentityFixture } from './recovery-identity-fixture.js';
 
 test(
   'RF31 real PostgreSQL ownership and Mongo client DTO, paging and canonical state protection',
@@ -67,19 +68,13 @@ test(
       const before = await snapshot();
       await assert.rejects(
         Database.connection.transaction(async (transaction) => {
-          const [reference] = await sql(
-            'SELECT client_id,sector_id,created_by FROM service_orders ORDER BY id LIMIT 1',
-            [],
-            transaction,
-          );
-          const [other] = await sql(
-            'SELECT id FROM client WHERE id<>$1 ORDER BY id LIMIT 1',
-            [reference.client_id],
+          const { reference, other } = await createRecoveryIdentityFixture(
+            sql,
             transaction,
           );
           assert.ok(
             other,
-            'Recovery needs two preexisting clients; never create permanent identity fixtures',
+            'Recovery needs two distinct clients in the rollback-only fixture',
           );
           const ownIds = [];
           let foreign;

@@ -1,0 +1,2 @@
+# PDF fixtures are byte-sensitive binaries (including required xref spacing).
+tests/fixtures/budgets/*.pdf -diff

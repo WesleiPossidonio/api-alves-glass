@@ -1,5 +1,11 @@
 
-FROM node:22-alpine
+# Node 22 / Alpine 3.24, pinned to the inspected multi-platform image digest.
+FROM node:22-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a
+
+# Runtime dependency: keep CLI and library on the same reviewed APK revision.
+# Missing revisions must fail the build, never silently upgrade or use edge.
+RUN apk add --no-cache qpdf=12.3.2-r0 qpdf-libs=12.3.2-r0 \
+    && qpdf --version
 
 WORKDIR /app
 
