@@ -6,7 +6,7 @@ import Material from '../../../src/app/models/Material.js'
 import MaterialCategory from '../../../src/app/models/MaterialCategory.js'
 import { MaterialImageServiceClient } from '../../../src/app/services/MaterialImageService.js'
 import { StorageServiceClient } from '../../../src/app/services/StorageService.js'
-import minioClient from '../../../src/config/minio.js'
+import { createMinioClient } from '../../../src/config/minio.js'
 import { MinioUploadIntentRepositoryClient } from '../../../src/app/repositories/MinioUploadIntentRepository.js'
 import { MinioCleanupJobRepositoryClient } from '../../../src/app/repositories/MinioCleanupJobRepository.js'
 
@@ -19,6 +19,7 @@ test('Feature 003 image reference, intent, cleanup and MinIO object stay transac
   assert.equal(process.env.DB_DATABASE, 'feature003_integration')
   assert.equal(process.env.MINIO_ENDPOINT, '127.0.0.1')
   assert.equal(process.env.MINIO_PORT, '59000')
+  const minioClient = createMinioClient(process.env)
   assert.equal(await minioClient.bucketExists(process.env.MINIO_PRIVATE_BUCKET), true)
 
   const user = await Database.models.User.findOne({ attributes: ['id'] })
@@ -44,7 +45,7 @@ test('Feature 003 image reference, intent, cleanup and MinIO object stay transac
     }
   })
 
-  const storage = new StorageServiceClient()
+  const storage = new StorageServiceClient({ client: minioClient })
   const intents = new MinioUploadIntentRepositoryClient(Database.models.MinioUploadIntent)
   const jobs = new MinioCleanupJobRepositoryClient(Database.models.MinioCleanupJob)
   const baseMaterials = {

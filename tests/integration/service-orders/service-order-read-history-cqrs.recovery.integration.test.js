@@ -11,6 +11,7 @@ import Projection, {
 import { ServiceOrderProjectionConsumer } from '../../../src/app/services/ServiceOrderProjectionConsumer.js';
 import { ServiceOrderOutboxPublisher } from '../../../src/app/services/ServiceOrderOutboxPublisher.js';
 import { createCqrsConnections } from '../../../src/config/cqrs.js';
+import { createRecoveryIdentityFixture } from './recovery-identity-fixture.js';
 
 test(
   'RF32 real PostgreSQL Outbox / RabbitMQ / Mongo: product history, numeric pagination, replay and isolation',
@@ -81,13 +82,14 @@ test(
         db: 'feature004_recovery_integration',
         usr: 'feature004_recovery_dev',
       });
-      // Reuse existing identities only; no additional users, clients, sectors or canonical OS persist.
-      const [reference] = await sql(
-        'SELECT sector_id,client_id,created_by FROM service_orders ORDER BY id LIMIT 1',
-      );
-      assert.ok(reference);
+      // The identity fixture and canonical OS are rolled back with this transaction.
       await assert.rejects(
         Database.connection.transaction(async (transaction) => {
+          const { reference } = await createRecoveryIdentityFixture(
+            sql,
+            transaction,
+          );
+          assert.ok(reference);
           const order = await Orders.create(
             {
               sectorId: reference.sector_id,
@@ -249,6 +251,9 @@ test(
           const publisher = new ServiceOrderOutboxPublisher({ connections });
           publisher.claim = async () => outbox;
           publisher.openConfirmChannel = async () => ({
+            on: (event, listener) => channel.on(event, listener),
+            removeListener: (event, listener) =>
+              channel.removeListener(event, listener),
             publish: (_exchange, _route, body, options, callback) =>
               channel.sendToQueue(queue.queue, body, options, callback),
             close: async () => {},
